@@ -2,6 +2,7 @@ import os
 import re
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_postgres import PGVector
+from langchain_core.documents import Document
 from backend.chunk import splitter
 
 DB_URL = os.getenv(
@@ -17,14 +18,13 @@ def load_with_pages(path):
     docs = []
     source = os.path.basename(path)
     for i in range(1, len(parts), 2):
-        page = parts[i]
+        page = int(parts[i])
         content = parts[i+1] if i+1 < len(parts) else ""
         for chunk in splitter.split_text(content):
-            docs.append({
-                "text": chunk,
-                "source": source,
-                "page": int(page)
-            })
+            docs.append(Document(
+                page_content=chunk,
+                metadata={"source": source, "page": page}
+            ))
     return docs
 
 if __name__ == "__main__":
@@ -44,7 +44,5 @@ if __name__ == "__main__":
         use_jsonb=True,
     )
 
-    texts = [d["text"] for d in all_docs]
-    metas = [{"source": d["source"], "page": d["page"]} for d in all_docs]
-    store.add_texts(texts, metas)
+    store.add_documents(all_docs)
     print("Ingest done with source+page")
