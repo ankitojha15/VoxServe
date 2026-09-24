@@ -1,6 +1,15 @@
 import os
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_postgres import PGVector
+from langchain_community.retrievers import BM25Retriever
+from langchain.retrievers import EnsembleRetriever
+from langchain_core.documents import Document
+from backend.chunk import splitter
+from langchain.retrievers.document_compressors import CrossEncoderReranker
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+from langchain.retrievers import ContextualCompressionRetriever
+from backend.ingest import load_with_pages
+
 
 DB_URL = os.getenv(
     "DATABASE_URL",
@@ -16,13 +25,36 @@ _store = PGVector(
     use_jsonb=True,
 )
 
-_retriever = _store.as_retriever(search_kwargs={"k": 4})
+dense = _store.as_retriever(search_kwargs={"k": 10})
+
+# BM25 ke liye same chunks memory me
+def _bm25_docs():
+    docs = []
+    for fname in ["refund-policy.txt", "shipping-help.txt"]:
+        docs.extend(load_with_pages(f"data/raw/{fname}"))
+    return docs
+
+bm25 = BM25Retriever.from_documents(_bm25_docs())
+bm25.k = 10
+
+ensemble = EnsembleRetriever(
+    retrievers=[dense, bm25],
+    weights=[0.7, 0.3]
+)
+
+_reranker_model = HuggingFaceCrossEncoder(
+    model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
+)
+_compressor = CrossEncoderReranker(model=_reranker_model, top_n=4)
+final_retriever = ContextualCompressionRetriever(
+    base_compressor=_compressor,
+    base_retriever=ensemble
+)
 
 def search(query, k=4):
-    _retriever.search_kwargs = {"k": k}
-    docs = _retriever.invoke(query)
+    docs = final_retriever.invoke(query)
     results = []
-    for d in docs:
+    for d in docs[:k]:
         results.append({
             "text": d.page_content,
             "source": d.metadata.get("source", "unknown"),
