@@ -1,0 +1,19 @@
+VoxServe Shipping Help - Official Guide
+
+[Page 1]
+1. Delivery Timelines:
+- Metro cities: delivery within 2 business days.
+- Non-metro cities: delivery within 3-5 business days.
+- Remote pincodes may take up to 7 business days.
+
+[Page 2]
+2. Order Tracking:
+- Live tracking ID is available via order-mcp tool using get_order_status.
+- Customer needs order ID to fetch tracking status.
+- If tracking shows stuck for more than 48 hours, create a support ticket.
+
+[Page 3]
+3. Failed Delivery:
+- If delivery fails twice, order is returned to warehouse.
+- Customer can request redelivery once via support.
+- After 2 failed voice responses, auto-create ticket for human follow-up.
