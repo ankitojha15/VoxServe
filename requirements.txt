@@ -17,3 +17,4 @@ edge-tts==6.1.9
 python-dotenv==1.0.1
 langchain-groq==0.2.0
 gtts==2.5.4
+livekit-api==1.0.0
