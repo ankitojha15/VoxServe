@@ -3,3 +3,4 @@ vsenv/
 __pycache__/
 *.pyc
 *.log
+*.mp3
