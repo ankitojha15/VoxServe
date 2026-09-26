@@ -6,6 +6,10 @@ import redis
 from backend.agent import app as agent_app
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+try:
+    from langfuse import get_client
+except Exception:
+    get_client = None
 
 
 app = FastAPI(title="VoxServe")
@@ -19,6 +23,13 @@ app.add_middleware(
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 r = redis.from_url(REDIS_URL, decode_responses=True)
+
+try:
+    _lf = get_client() if get_client else None
+    if _lf:
+        _lf.auth_check()
+except Exception:
+    _lf = None
 
 class ChatIn(BaseModel):
     query: str
@@ -59,6 +70,20 @@ def chat(body: ChatIn):
         "confidence": out.get("confidence", 0.0),
         "cached": False,
     }
+
+    if _lf:
+        try:
+            with _lf.start_as_current_observation(
+                as_type="generation",
+                name="chat-answer",
+                model="openai/gpt-oss-20b",
+                input=body.query,
+            ) as gen:
+                gen.update(output=data["answer"], metadata={"intent": data["intent"]})
+            _lf.flush()
+        except Exception:
+            pass
+
     try:
         r.setex(key, 3600, json.dumps(data))
     except Exception:
