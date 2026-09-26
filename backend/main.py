@@ -1,16 +1,19 @@
 import os
 import json
 from fastapi import FastAPI
+from dotenv import load_dotenv
 from pydantic import BaseModel
 import redis
 from backend.agent import app as agent_app
+from backend.observe import get_trace_client, trace_chat
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 try:
-    from langfuse import get_client
+    from langfuse import get_client  # noqa: F401 (v4 entrypoint lives in observe.py)
 except Exception:
     get_client = None
 
+load_dotenv()
 
 app = FastAPI(title="VoxServe")
 
@@ -25,9 +28,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 r = redis.from_url(REDIS_URL, decode_responses=True)
 
 try:
-    _lf = get_client() if get_client else None
-    if _lf:
-        _lf.auth_check()
+    _lf = get_trace_client()
 except Exception:
     _lf = None
 
@@ -71,18 +72,7 @@ def chat(body: ChatIn):
         "cached": False,
     }
 
-    if _lf:
-        try:
-            with _lf.start_as_current_observation(
-                as_type="generation",
-                name="chat-answer",
-                model="openai/gpt-oss-20b",
-                input=body.query,
-            ) as gen:
-                gen.update(output=data["answer"], metadata={"intent": data["intent"]})
-            _lf.flush()
-        except Exception:
-            pass
+    trace_chat(_lf, body.query, data["answer"], data["intent"])
 
     try:
         r.setex(key, 3600, json.dumps(data))
