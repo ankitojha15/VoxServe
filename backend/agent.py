@@ -17,6 +17,8 @@ class State(TypedDict):
 
 def intent_node(state: State):
     q = state["query"].lower()
+    if "approve" in q and "no question" in q:
+            return {"intent": "unknown", "confidence": 0.4}
     if "order" in q or "track" in q or "#" in q:
         return {"intent": "order"}
     if "ticket" in q or "stuck" in q or "failed" in q:
@@ -24,6 +26,7 @@ def intent_node(state: State):
     if "refund" in q or "ship" in q or "deliver" in q or "policy" in q:
         return {"intent": "policy"}
     return {"intent": "unknown", "confidence": 0.5}
+
 
 def retriever_node(state: State):
     docs = rag_search(state["query"], k=4)
