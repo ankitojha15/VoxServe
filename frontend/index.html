@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><title>VoxServe Demo</title></head>
+<body>
+<h2>VoxServe - Support Demo (backend focused)</h2>
+<input id="q" placeholder="Ask: Where is my order 1001?" size="50">
+<button onclick="send()">Send</button>
+<button onclick="mic()">Mic</button>
+<div id="out"></div>
+<script>
+async function send() {
+  const q = document.getElementById('q').value;
+  const r = await fetch('http://localhost:8000/chat', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({query: q})
+  });
+  const d = await r.json();
+  document.getElementById('out').innerHTML +=
+    `<p><b>You:</b> ${q}<br><b>Bot [${d.intent} ${d.confidence}]:</b> ${d.answer} ${d.cached ? '(cached)' : ''}</p>`;
+  speechSynthesis.speak(new SpeechSynthesisUtterance(d.answer.slice(0, 200)));
+}
+function mic() {
+  const R = window.webkitSpeechRecognition || window.SpeechRecognition;
+  if (!R) { alert('Mic not supported, type karke bhejo'); return; }
+  const rec = new R(); rec.lang = 'en-IN'; rec.onresult = e => {
+    document.getElementById('q').value = e.results[0][0].transcript; send();
+  }; rec.start();
+}
+</script>
+</body>
+</html>

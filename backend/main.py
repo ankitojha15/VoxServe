@@ -4,8 +4,18 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import redis
 from backend.agent import app as agent_app
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+
 
 app = FastAPI(title="VoxServe")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 r = redis.from_url(REDIS_URL, decode_responses=True)
@@ -25,6 +35,10 @@ def health():
     except Exception:
         redis_status = "down"
     return {"status": "ok", "redis": redis_status}
+
+@app.get("/demo")
+def demo():
+    return FileResponse("frontend/index.html")
 
 @app.post("/chat")
 def chat(body: ChatIn):
