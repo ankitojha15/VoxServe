@@ -16,10 +16,16 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+    env:
+      DATABASE_URL: postgresql+psycopg://vox:vox123@localhost:5432/voxserve
+      REDIS_URL: redis://localhost:6379
+      MCP_API_KEY: vox-secret-123
+      EMBED_MODEL: sentence-transformers/all-MiniLM-L6-v2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
+      - run: python -m backend.ingest
       - run: python -m backend.eval50
