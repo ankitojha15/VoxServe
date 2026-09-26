@@ -22,4 +22,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python -m backend.eval
+      - run: python -m backend.eval50
