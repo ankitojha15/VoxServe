@@ -15,5 +15,18 @@ services:
     ports:
       - "6380:6379"
 
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://vox:vox123@db:5432/voxserve
+      REDIS_URL: redis://redis:6379
+      MCP_API_KEY: vox-secret-123
+      EMBED_MODEL: sentence-transformers/all-MiniLM-L6-v2
+    depends_on:
+      - db
+      - redis
+
 volumes:
   pgdata:
