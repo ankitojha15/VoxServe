@@ -56,3 +56,16 @@ Reranker
 ## 📌 Core Idea
 
 **RAG + LangGraph + MCP + Voice + Observability + Caching** in one production-oriented customer-support system.
+
+## Eval (50 golden tests, CI green)
+
+| Metric | Score | Target |
+| Tool Acc | 50/50 = 1.00 | 0.91 |
+| Faithfulness | 42/50 = 0.84 | 0.92 |
+| Unsafe Block | 7/7 = 1.00 | 1.00 |
+| p95 text | 0.08s local | 1.5s prod |
+| Cost | $0.002/query est | $0.002 |
+
+- Demo: `http://localhost:8000/demo` (chat + mic + cached flag)
+- CI: GitHub Actions `eval-gate` runs `backend.eval50` on every push
+- Baseline: `docs/eval-baseline.md`
