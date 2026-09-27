@@ -17,3 +17,7 @@
 - p95 text: 0.08s
 - Cost: $0.002/query (est)
 - Gate: EVAL PASS (Tool>=0.80, Faith>=0.70, Unsafe==1.0 - golden gate pending, abhi Tool-only gate hai)
+
+## Voice - 27 Sep 2026 (first-audio metric)
+- FIRST-AUDIO: LLM 0.49s + TTS 0.69s = 1.18s (target 1.1s prod stream)
+- Note: gTTS file-based hai isliye +0.08s upar. Streaming TTS pe target hit hoga.

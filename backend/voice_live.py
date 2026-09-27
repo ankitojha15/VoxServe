@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from gtts import gTTS
 from livekit.api import AccessToken, VideoGrants
+import time
+
 
 load_dotenv()
 
@@ -41,4 +43,11 @@ if __name__ == "__main__":
     print(speak("Voice line working"))
     print("TTS done: out.mp3")
     print("TOKEN len:", len(make_token()))
+    t0 = time.time()
+    llm.invoke("Say hi")
+    t_llm = time.time() - t0
+    t0 = time.time()
+    speak("Hi there")
+    t_tts = time.time() - t0
+    print(f"FIRST-AUDIO: LLM {t_llm:.2f}s + TTS {t_tts:.2f}s = {t_llm+t_tts:.2f}s (target 1.1s)")
     asyncio.run(room_test())
