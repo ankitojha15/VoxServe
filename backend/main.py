@@ -76,6 +76,11 @@ def chat(body: ChatIn):
     except Exception:
         pass
 
+    from backend.sem_cache import sem_get, sem_set
+    sem_hit = sem_get(body.query)
+    if sem_hit:
+        return sem_hit
+    
     out = agent_app.invoke({"query": body.query})
     data = {
         "answer": out.get("answer", ""),
@@ -88,6 +93,7 @@ def chat(body: ChatIn):
 
     try:
         r.setex(key, 3600, json.dumps(data))
+        sem_set(body.query, {k: v for k, v in data.items() if k != "cached"})
     except Exception:
         pass
     return data
