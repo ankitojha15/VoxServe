@@ -1,9 +1,18 @@
 from mcp.server.fastmcp import FastMCP
 from mcp_hub.auth import check_key, audit
+import json as _json
+import os as os
 
 mcp = FastMCP("ticket-mcp")
 
 TICKETS = []
+
+_PAST = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "past-tickets.json")
+try:
+    with open(_PAST) as _f:
+        TICKETS.extend(_json.loads(line) for line in _f)
+except FileNotFoundError:
+    pass
 
 @mcp.tool()
 def create_ticket(order_id: str, issue: str, api_key: str) -> dict:
