@@ -8,12 +8,14 @@ from backend.agent import app as agent_app
 from backend.observe import get_trace_client, trace_chat
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 try:
     from langfuse import get_client  # noqa: F401 (v4 entrypoint lives in observe.py)
 except Exception:
     get_client = None
+    
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = FastAPI(title="VoxServe")
 
@@ -29,6 +31,7 @@ r = redis.from_url(REDIS_URL, decode_responses=True)
 
 try:
     _lf = get_trace_client()
+    print(f"Langfuse: {'enabled on ' + os.getenv('LANGFUSE_HOST', '?') if _lf else 'DISABLED (no valid key)'}")
 except Exception:
     _lf = None
 
@@ -79,3 +82,14 @@ def chat(body: ChatIn):
     except Exception:
         pass
     return data
+
+
+@app.post("/chat/stream")
+def chat_stream(body: ChatIn):
+    out = agent_app.invoke({"query": body.query})
+    ans = out.get("answer", "")
+    def gen():
+        for i in range(0, len(ans), 50):
+            yield f"data: {ans[i:i+50]}\n\n"
+        yield "data: [DONE]\n\n"
+    return StreamingResponse(gen(), media_type="text/event-stream")
