@@ -64,6 +64,7 @@ Reranker
 | Faithfulness | 42/50 = 0.84 | 0.92 |
 | Unsafe Block | 7/7 = 1.00 | 1.00 |
 | p95 text | 0.08s local | 1.5s prod |
+| Voice first-audio | 1.18s local file-TTS (LLM 0.49 + TTS 0.69) | 1.1s prod stream |
 | Cost | $0.002/query est | $0.002 |
 
 - Demo: `http://localhost:8000/demo` (chat + mic + cached flag)
