@@ -13,7 +13,7 @@ try:
     from langfuse import get_client  # noqa: F401 (v4 entrypoint lives in observe.py)
 except Exception:
     get_client = None
-    
+
 
 load_dotenv(override=True)
 
@@ -54,6 +54,15 @@ def health():
 @app.get("/demo")
 def demo():
     return FileResponse("frontend/index.html")
+
+class TokenIn(BaseModel):
+    room: str = "voice-room-1"
+    name: str = "user1"
+
+@app.post("/voice/token")
+def voice_token(body: TokenIn):
+    from backend.voice_live import make_token
+    return {"token": make_token(body.room, body.name), "url": os.getenv("LIVEKIT_URL")}
 
 @app.post("/chat")
 def chat(body: ChatIn):
