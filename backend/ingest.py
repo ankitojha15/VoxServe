@@ -53,40 +53,59 @@ def load_url_with_pages(url):
             ))
     return docs
 
-if __name__ == "__main__":
-    all_docs = []
-    for fname in ["refund-policy.txt", "shipping-help.txt"]:
-        all_docs.extend(load_with_pages(f"data/raw/{fname}"))
-    for fpath in glob.glob("data/raw/*.pdf"):
-        all_docs.extend(load_pdf_with_pages(fpath))
-    URLS = [
+def load_tickets_with_pages(path="data/past-tickets.json"):
+    import json
+    docs = []
+    try:
+        fp = open(path)
+    except FileNotFoundError:
+        return docs
+    for line in fp:
+        t = json.loads(line)
+        text = f"Order {t['order_id']}: {t['issue']}. Resolution: {t['resolution']}"
+        for chunk in splitter.split_text(text):
+            docs.append(Document(
+                page_content=chunk,
+                metadata={"source": "past-tickets.json", "page": 1}
+            ))
+    return docs
+
+URLS = [
         # "https://example.com/shipping-help",
     ]
-    for url in URLS:
-        all_docs.extend(load_url_with_pages(url))
-
-    print(f"Total chunks: {len(all_docs)}")
-
+if __name__ == "__main__":
     embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
     print(f"Embedding model: {EMBED_MODEL}")
 
-    store = PGVector(
-        embeddings=embeddings,
-        collection_name="vox_docs",
-        connection=DB_URL,
-        use_jsonb=True,
-    )
-    try:
-        store.delete_collection()
-    except Exception:
-        pass
+    policy_docs = []
+    for fname in ["refund-policy.txt", "shipping-help.txt"]:
+        policy_docs.extend(load_with_pages(f"data/raw/{fname}"))
+    for fpath in glob.glob("data/raw/*.pdf"):
+        policy_docs.extend(load_pdf_with_pages(fpath))
+    for url in URLS:
+        policy_docs.extend(load_url_with_pages(url))
 
-    store = PGVector(
-        embeddings=embeddings,
-        collection_name="vox_docs",
-        connection=DB_URL,
-        use_jsonb=True,
-    )
+    ticket_docs = load_tickets_with_pages()
 
-    store.add_documents(all_docs)
-    print("Ingest done with source+page")
+    print(f"Policy chunks: {len(policy_docs)}, Ticket chunks: {len(ticket_docs)}")
+
+    for name, docs in [("vox_policy", policy_docs), ("vox_tickets", ticket_docs)]:
+        store = PGVector(
+            embeddings=embeddings,
+            collection_name=name,
+            connection=DB_URL,
+            use_jsonb=True,
+        )
+        try:
+            store.delete_collection()
+        except Exception:
+            pass
+        store = PGVector(
+            embeddings=embeddings,
+            collection_name=name,
+            connection=DB_URL,
+            use_jsonb=True,
+        )
+        if docs:
+            store.add_documents(docs)
+    print("Ingest done: 2 collections")
