@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head><title>VoxServe Demo</title></head>
+<head><title>VoxServe Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+</head>
 <body>
 <h2>VoxServe - Support Demo (backend focused)</h2>
 <input id="q" placeholder="Ask: Where is my order 1001?" size="50">
 <button onclick="send()">Send</button>
 <button onclick="mic()">Mic</button>
+<button onclick="joinRoom()">Join Room</button>
 <div id="out"></div>
 <script>
 async function send() {
@@ -20,11 +23,23 @@ async function send() {
   speechSynthesis.speak(new SpeechSynthesisUtterance(d.answer.slice(0, 200)));
 }
 function mic() {
+  speechSynthesis.cancel();
   const R = window.webkitSpeechRecognition || window.SpeechRecognition;
   if (!R) { alert('Mic not supported, type karke bhejo'); return; }
   const rec = new R(); rec.lang = 'en-IN'; rec.onresult = e => {
     document.getElementById('q').value = e.results[0][0].transcript; send();
   }; rec.start();
+}
+async function joinRoom() {
+  const r = await fetch('http://localhost:8000/voice/token', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({room: 'voice-room-1', name: 'web1'})
+  });
+  const d = await r.json();
+  const room = new LivekitClient.Room();
+  await room.connect(d.url, d.token);
+  await room.localParticipant.setMicrophoneEnabled(true);
+  document.getElementById('out').innerHTML += '<p><b>Room:</b> joined voice-room-1, mic on</p>';
 }
 </script>
 </body>
