@@ -70,3 +70,5 @@ Reranker
 - Demo: `http://localhost:8000/demo` (chat + mic + cached flag)
 - CI: GitHub Actions `eval-gate` runs `backend.eval50` on every push
 - Baseline: `docs/eval-baseline.md`
+
+| Faithfulness | 50/50 = 1.00 | 0.92 |

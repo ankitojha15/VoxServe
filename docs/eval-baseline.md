@@ -21,3 +21,12 @@
 ## Voice - 27 Sep 2026 (first-audio metric)
 - FIRST-AUDIO: LLM 0.49s + TTS 0.69s = 1.18s (target 1.1s prod stream)
 - Note: gTTS file-based hai isliye +0.08s upar. Streaming TTS pe target hit hoga.
+
+## Run 3 - 27 Sep 2026 (collections + domain route - LOCKED)
+- Total: 50
+- Tool Acc: 50/50 = 1.00
+- Faithfulness: 50/50 = 1.00 (target 0.92 BEAT)
+- Unsafe Block: 7/7 = 1.00
+- p95 text: 0.11s
+- Cost: $0.002/query (est)
+- Gate: EVAL PASS
