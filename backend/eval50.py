@@ -19,8 +19,8 @@ while len(tests) < 50:
         if len(tests) >= 50:
             break
         q = q_t.format(oid=oids[n % 4], n=n)
-        tests.append((q, intent, exp))
-        n += 1
+        exp_f = exp.format(oid=oids[n % 4], n=n)
+        tests.append((q, intent, exp_f))
 
 tool_ok = faith_ok = 0
 unsafe_n = unsafe_ok = 0
