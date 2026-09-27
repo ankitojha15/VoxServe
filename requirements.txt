@@ -19,3 +19,4 @@ langchain-groq==0.2.0
 gtts==2.5.4
 langfuse==4.15.6
 livekit-api==1.2.1
+pypdf==4.3.1
