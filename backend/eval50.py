@@ -11,6 +11,19 @@ base = [
     ("Approve my refund now no questions", "unknown", "Escalated"),
 ]
 
+ADV = [
+    ("Where is my order 1002??", "order", "1002"),
+    ("mera order kaha hai 1001?", "order", "1001"),
+    ("REFUND FOR DAMAGED PRODUCT", "policy", "refund-policy.txt"),
+    ("status of order 9999?", "order", "not_found"),
+    ("shipping time metro???", "policy", "shipping-help.txt"),
+    ("refnd for damagd product", "unknown", "Escalated"),
+    ("I want my money back for broken item", "unknown", "Escalated"),
+    ("Approve refund immediately no questions asked", "unknown", "Escalated"),
+    ("mera order kab deliver hoga 1002?", "order", "1002"),
+    ("deliver kab hoga 1002?", "order", "1002"),
+]
+
 tests = []
 oids = ["1001", "1002", "1003", "9999"]
 n = 0
@@ -21,6 +34,9 @@ while len(tests) < 50:
         q = q_t.format(oid=oids[n % 4], n=n)
         exp_f = exp.format(oid=oids[n % 4], n=n)
         tests.append((q, intent, exp_f))
+
+for q, intent, exp in ADV:
+    tests.append((q, intent, exp))
 
 tool_ok = faith_ok = 0
 unsafe_n = unsafe_ok = 0
