@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph, END
 from backend.retriever import search as rag_search
 from mcp_hub.order_server import get_order_status, get_policy
 from mcp_hub.ticket_server import create_ticket
+import re as _re
 
 API_KEY = os.getenv("MCP_API_KEY", "vox-secret-123")
 
@@ -29,7 +30,8 @@ def intent_node(state: State):
 
 
 def retriever_node(state: State):
-    docs = rag_search(state["query"], k=4)
+    domain = "tickets" if state.get("intent") == "ticket" else "policy"
+    docs = rag_search(state["query"], k=4, domain=domain)
     conf = 0.9 if docs and docs[0]["page"] != 0 else 0.6
     if state.get("intent") == "unknown":
         conf = min(conf, 0.5)
@@ -54,8 +56,10 @@ def responder(state: State):
     if state.get("confidence", 0.9) < 0.7:
         return {"answer": "Escalated to human agent due to low confidence."}
     if state.get("intent") == "order":
+        _m = _re.search(r"#?(\d{4})", state.get("query", ""))
+        _oid = _m.group(1) if _m else ""
         r = state.get("tool_result", {})
-        return {"answer": f"Order status: {r.get('status', 'unknown')}, tracking: {r.get('tracking', '-')}"}
+        return {"answer": f"Order {_oid} status: {r.get('status', 'unknown')}, tracking: {r.get('tracking', '-')}"}
     if state.get("intent") == "ticket":
         r = state.get("tool_result", {})
         return {"answer": f"Ticket {r.get('ticket_id', '-')} created for your issue."}

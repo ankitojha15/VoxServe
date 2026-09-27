@@ -8,7 +8,8 @@ from backend.chunk import splitter
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain.retrievers import ContextualCompressionRetriever
-from backend.ingest import load_with_pages
+from backend.ingest import load_with_pages, load_tickets_with_pages
+
 
 
 DB_URL = os.getenv(
@@ -18,27 +19,41 @@ DB_URL = os.getenv(
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
 _embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
-_store = PGVector(
-    embeddings=_embeddings,
-    collection_name="vox_docs",
-    connection=DB_URL,
-    use_jsonb=True,
-)
+def _make_store(collection):
+    return PGVector(
+        embeddings=_embeddings,
+        collection_name=collection,
+        connection=DB_URL,
+        use_jsonb=True,
+    )
 
-dense = _store.as_retriever(search_kwargs={"k": 10})
+_store_policy = _make_store("vox_policy")
+_store_tickets = _make_store("vox_tickets")
+
+dense_policy = _store_policy.as_retriever(search_kwargs={"k": 10})
+dense_tickets = _store_tickets.as_retriever(search_kwargs={"k": 10})
 
 # BM25 ke liye same chunks memory me
-def _bm25_docs():
+def _bm25_docs_policy():
     docs = []
     for fname in ["refund-policy.txt", "shipping-help.txt"]:
         docs.extend(load_with_pages(f"data/raw/{fname}"))
     return docs
 
-bm25 = BM25Retriever.from_documents(_bm25_docs())
-bm25.k = 10
+def _bm25_docs_tickets():
+    return load_tickets_with_pages()
 
-ensemble = EnsembleRetriever(
-    retrievers=[dense, bm25],
+bm25_policy = BM25Retriever.from_documents(_bm25_docs_policy())
+bm25_policy.k = 10
+bm25_tickets = BM25Retriever.from_documents(_bm25_docs_tickets())
+bm25_tickets.k = 10
+
+ensemble_policy = EnsembleRetriever(
+    retrievers=[dense_policy, bm25_policy],
+    weights=[0.7, 0.3]
+)
+ensemble_tickets = EnsembleRetriever(
+    retrievers=[dense_tickets, bm25_tickets],
     weights=[0.7, 0.3]
 )
 
@@ -46,13 +61,18 @@ _reranker_model = HuggingFaceCrossEncoder(
     model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
 )
 _compressor = CrossEncoderReranker(model=_reranker_model, top_n=4)
-final_retriever = ContextualCompressionRetriever(
+final_policy = ContextualCompressionRetriever(
     base_compressor=_compressor,
-    base_retriever=ensemble
+    base_retriever=ensemble_policy
+)
+final_tickets = ContextualCompressionRetriever(
+    base_compressor=_compressor,
+    base_retriever=ensemble_tickets
 )
 
-def search(query, k=4):
-    docs = final_retriever.invoke(query)
+def search(query, k=4, domain="policy"):
+    retriever = final_tickets if domain == "tickets" else final_policy
+    docs = retriever.invoke(query)
     results = []
     for d in docs[:k]:
         results.append({
