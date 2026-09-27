@@ -41,12 +41,29 @@ def load_pdf_with_pages(path):
             ))
     return docs
 
+def load_url_with_pages(url):
+    from langchain_community.document_loaders import WebBaseLoader
+    raw = WebBaseLoader(url).load()
+    docs = []
+    for d in raw:
+        for chunk in splitter.split_text(d.page_content):
+            docs.append(Document(
+                page_content=chunk,
+                metadata={"source": url, "page": 1}
+            ))
+    return docs
+
 if __name__ == "__main__":
     all_docs = []
     for fname in ["refund-policy.txt", "shipping-help.txt"]:
         all_docs.extend(load_with_pages(f"data/raw/{fname}"))
     for fpath in glob.glob("data/raw/*.pdf"):
         all_docs.extend(load_pdf_with_pages(fpath))
+    URLS = [
+        # "https://example.com/shipping-help",
+    ]
+    for url in URLS:
+        all_docs.extend(load_url_with_pages(url))
 
     print(f"Total chunks: {len(all_docs)}")
 
@@ -63,7 +80,7 @@ if __name__ == "__main__":
         store.delete_collection()
     except Exception:
         pass
-    
+
     store = PGVector(
         embeddings=embeddings,
         collection_name="vox_docs",
