@@ -6,7 +6,7 @@ splitter = RecursiveCharacterTextSplitter(
 )
 
 if __name__== "__main__":
-    sample = open("data/raw/refund-policy.txt").read()
+    sample = open("data/raw/REFUND_POLICY.md").read()
     parts = splitter.split_text(sample)
     print(f"Total chunks: {len(parts)}")
     print(f"First chunk preview: {parts[0][:200]}")

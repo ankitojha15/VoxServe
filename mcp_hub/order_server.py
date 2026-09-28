@@ -27,9 +27,9 @@ def get_policy(topic: str, api_key: str) -> dict:
         return {"error": "unauthorized"}
     topic = topic.lower()
     if "refund" in topic:
-        result = {"topic": "refund", "text": open("data/raw/refund-policy.txt").read()[:1000]}
+        result = {"topic": "refund", "text": open("data/raw/REFUND_POLICY.md").read()[:1000]}
     elif "ship" in topic:
-        result = {"topic": "shipping", "text": open("data/raw/shipping-help.txt").read()[:1000]}
+        result = {"topic": "shipping", "text": open("data/raw/SHIPPING_POLICY.md").read()[:1000]}
     else:
         result = {"topic": topic, "text": "policy not found"}
     audit("get_policy", {"topic": topic}, "ok")
