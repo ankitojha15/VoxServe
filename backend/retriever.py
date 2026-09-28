@@ -8,7 +8,7 @@ from backend.chunk import splitter
 from langchain.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain.retrievers import ContextualCompressionRetriever
-from backend.ingest import load_with_pages, load_tickets_with_pages
+from backend.ingest import load_with_pages, load_tickets_with_pages, load_md_with_pages
 
 
 
@@ -35,9 +35,10 @@ dense_tickets = _store_tickets.as_retriever(search_kwargs={"k": 10})
 
 # BM25 ke liye same chunks memory me
 def _bm25_docs_policy():
+    import glob as _glob
     docs = []
-    for fname in ["refund-policy.txt", "shipping-help.txt"]:
-        docs.extend(load_with_pages(f"data/raw/{fname}"))
+    for fpath in sorted(_glob.glob("data/raw/*.md")):
+        docs.extend(load_md_with_pages(fpath))
     return docs
 
 def _bm25_docs_tickets():
