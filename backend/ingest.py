@@ -29,6 +29,21 @@ def load_with_pages(path):
             ))
     return docs
 
+def load_md_with_pages(path):
+    import re as _re2
+    text = open(path).read()
+    parts = _re2.split(r"(?m)^##\s+", text)
+    docs = []
+    source = os.path.basename(path)
+    if len(parts) <= 1:
+        for chunk in splitter.split_text(text):
+            docs.append(Document(page_content=chunk, metadata={"source": source, "page": 1}))
+        return docs
+    for i, part in enumerate(parts[1:], start=1):
+        for chunk in splitter.split_text(part):
+            docs.append(Document(page_content=chunk, metadata={"source": source, "page": i}))
+    return docs
+
 def load_pdf_with_pages(path):
     raw = PyPDFLoader(path).load()
     docs = []
@@ -78,8 +93,8 @@ if __name__ == "__main__":
     print(f"Embedding model: {EMBED_MODEL}")
 
     policy_docs = []
-    for fname in ["refund-policy.txt", "shipping-help.txt"]:
-        policy_docs.extend(load_with_pages(f"data/raw/{fname}"))
+    for fpath in sorted(glob.glob("data/raw/*.md")):
+        policy_docs.extend(load_md_with_pages(fpath))
     for fpath in glob.glob("data/raw/*.pdf"):
         policy_docs.extend(load_pdf_with_pages(fpath))
     for url in URLS:
