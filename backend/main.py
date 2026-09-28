@@ -9,6 +9,7 @@ from backend.observe import get_trace_client, trace_chat
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
+from fastapi import UploadFile, File
 try:
     from langfuse import get_client  # noqa: F401 (v4 entrypoint lives in observe.py)
 except Exception:
@@ -63,6 +64,27 @@ class TokenIn(BaseModel):
 def voice_token(body: TokenIn):
     from backend.voice_live import make_token
     return {"token": make_token(body.room, body.name), "url": os.getenv("LIVEKIT_URL")}
+
+
+@app.post("/ingest/pdf")
+def ingest_pdf(file: UploadFile = File(...)):
+    path = f"data/raw/{file.filename}"
+    with open(path, "wb") as f:
+        f.write(file.file.read())
+    from backend.ingest import load_pdf_with_pages, EMBED_MODEL
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_postgres import PGVector
+    docs = load_pdf_with_pages(path)
+    emb = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+    store = PGVector(embeddings=emb, collection_name="vox_policy", connection=os.getenv("DATABASE_URL", "postgresql+psycopg://vox:vox123@localhost:5434/voxserve"), use_jsonb=True)
+    if docs:
+        store.add_documents(docs)
+    return {"file": file.filename, "chunks": len(docs)}
+
+@app.get("/sources")
+def sources():
+    import glob
+    return {"policy_files": sorted(glob.glob("data/raw/*")), "urls": []}
 
 @app.post("/chat")
 def chat(body: ChatIn):
