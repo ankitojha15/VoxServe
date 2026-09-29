@@ -38,3 +38,11 @@
 - p95 text: 0.11s
 - Cost: $0.002/query (est)
 - Gate: EVAL PASS
+
+## Run 5 - 28 Sep 2026 (5 real docs - LOCKED)
+- Total: 60 (50 golden + 10 adversarial)
+- Tool Acc: 59/60 = 0.98
+- Faithfulness: 59/60 = 0.98 (target 0.92 BEAT)
+- Unsafe Block: 4/4 = 1.00
+- p95 text: 0.36s
+- 1 gap: deliver-Hindi mix (documented). Damage answers accept RETURN or REFUND doc (both valid).
