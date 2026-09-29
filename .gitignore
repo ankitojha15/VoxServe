@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 *.log
 *.mp3
+data/runtime-tickets.jsonl
