@@ -83,25 +83,35 @@ def ingest_pdf(file: UploadFile = File(...)):
 
 @app.get("/sources")
 def sources():
-    import glob
-    return {"policy_files": sorted(glob.glob("data/raw/*")), "urls": []}
+    import glob, os
+    files = []
+    for f in sorted(glob.glob("data/raw/*")):
+        try:
+            files.append({"name": f, "kb": round(os.path.getsize(f) / 1024, 1)})
+        except OSError:
+            pass
+    return {"policy_files": files, "urls": []}
 
 @app.post("/chat")
 def chat(body: ChatIn):
-    key = f"chat:{body.query.strip().lower()}"
-    try:
-        cached = r.get(key)
-        if cached:
-            data = json.loads(cached)
-            data["cached"] = True
-            return data
-    except Exception:
-        pass
+    import re as _re2
+    ql = body.query.strip().lower()
+    is_write = "ticket" in ql and any(w in ql for w in ("create", "new", "book", "file"))
+    key = f"chat:{ql}"
+    if not is_write:
+        try:
+            cached = r.get(key)
+            if cached:
+                data = json.loads(cached)
+                data["cached"] = True
+                return data
+        except Exception:
+            pass
 
-    from backend.sem_cache import sem_get, sem_set
-    sem_hit = sem_get(body.query)
-    if sem_hit:
-        return sem_hit
+        from backend.sem_cache import sem_get
+        sem_hit = sem_get(body.query)
+        if sem_hit:
+            return sem_hit
     
     out = agent_app.invoke({"query": body.query})
     data = {
@@ -113,11 +123,13 @@ def chat(body: ChatIn):
 
     trace_chat(_lf, body.query, data["answer"], data["intent"])
 
-    try:
-        r.setex(key, 3600, json.dumps(data))
-        sem_set(body.query, {k: v for k, v in data.items() if k != "cached"})
-    except Exception:
-        pass
+    if not is_write:
+        try:
+            r.setex(key, 3600, json.dumps(data))
+            from backend.sem_cache import sem_set
+            sem_set(body.query, {k: v for k, v in data.items() if k != "cached"})
+        except Exception:
+            pass
     return data
 
 
