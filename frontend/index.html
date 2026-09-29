@@ -49,6 +49,13 @@
       <input type="text" id="q" placeholder="Ask: Where is my order 1001?">
       <button class="act" onclick="send()">Send</button>
       <button class="ghost" onclick="mic()">Mic</button>
+      <button class="ghost" onclick="stopSound()">Stop</button>
+      <div style="margin-top:8px; font-size:13px; color:#555;">Try:
+        <button class="ghost" onclick="ask('Where is my order 1001?')">order status</button>
+        <button class="ghost" onclick="ask('How many days for COD refund?')">COD refund</button>
+        <button class="ghost" onclick="ask('Can I cancel after dispatch?')">cancel rule</button>
+        <button class="ghost" onclick="ask('Show my past tickets')">past tickets</button>
+      </div>
     </div>
     <div class="card">
       <b>Conversation</b> <button class="ghost" onclick="clearChat()">Clear</button>
@@ -122,6 +129,12 @@ async function send() {
 }
 function clearChat() {
   document.getElementById('out').innerHTML = '<span class="skel">Answers appear here with citations.</span>';
+}
+function stopSound() {
+  try { speechSynthesis.cancel(); } catch (e) {}
+}
+function ask(q) {
+  document.getElementById('q').value = q; send();
 }
 function mic() {
   try { speechSynthesis.cancel(); } catch (e) {}
