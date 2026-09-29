@@ -23,6 +23,8 @@
   input[type=text] { font: inherit; font-size: 14px; padding: 7px; width: 60%; border: 1px solid #ccc; border-radius: 4px; }
   button.act { font: inherit; font-size: 14px; padding: 7px 14px; border: 1px solid #1f2937; background: #1f2937; color: #fff; border-radius: 4px; cursor: pointer; }
   button.ghost { font: inherit; font-size: 14px; padding: 7px 14px; background: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
+  button:active { transform: translateY(1px); }
+  button[disabled] { opacity: 0.45; cursor: default; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
   th { background: #f3f2ef; font-weight: 600; }
@@ -46,10 +48,10 @@
 <main>
   <div id="c-chat" class="tab on">
     <div class="card">
-      <input type="text" id="q" placeholder="Ask: Where is my order 1001?">
+      <input type="text" id="q" placeholder="Ask: Where is my order 1001?" onkeydown="if (event.key === 'Enter') send()">
       <button class="act" onclick="send()">Send</button>
       <button class="ghost" onclick="mic()">Mic</button>
-      <button class="ghost" onclick="stopSound()">Stop</button>
+      <button class="ghost" id="sndbtn" onclick="toggleSound()">Sound: On</button>
       <div style="margin-top:8px; font-size:13px; color:#555;">Try:
         <button class="ghost" onclick="ask('Where is my order 1001?')">order status</button>
         <button class="ghost" onclick="ask('How many days for COD refund?')">COD refund</button>
@@ -76,9 +78,9 @@
   </div>
   <div id="c-voice" class="tab">
     <div class="card">
-      <button class="act" onclick="joinRoom()">Join Room</button>
-      <button class="ghost" onclick="mic()">Speak</button>
-      <div id="vout" style="margin-top:8px;"><span class="skel">Room + transcript appear here.</span></div>
+      <button class="act" id="joinbtn" onclick="joinRoom()">Join Room</button>
+      <button class="ghost" id="speakbtn" onclick="mic()" disabled>Speak</button>
+      <div id="vout" style="margin-top:8px;"><span class="skel">Join the room first, then speak.</span></div>
     </div>
   </div>
   <div id="c-ops" class="tab">
@@ -125,13 +127,19 @@ async function send() {
   box.innerHTML += '<div class="row"><b>You:</b> ' + q + ' <span class="cite">' + t + '</span></div>'
     + '<div class="row' + (esc ? ' bad' : '') + '"><b>Bot [' + d.intent + ' ' + d.confidence + ']:</b> '
     + d.answer + (d.cached ? ' <span class="badge">cached' + (d.cached === true ? '' : ': ' + d.cached) + '</span>' : '') + '</div>';
-  try { speechSynthesis.speak(new SpeechSynthesisUtterance((d.answer || '').slice(0, 200))); } catch (e) {}
+  try { if (soundOn) speechSynthesis.speak(new SpeechSynthesisUtterance((d.answer || '').slice(0, 200))); } catch (e) {}
 }
 function clearChat() {
   document.getElementById('out').innerHTML = '<span class="skel">Answers appear here with citations.</span>';
 }
 function stopSound() {
   try { speechSynthesis.cancel(); } catch (e) {}
+}
+let soundOn = true;
+function toggleSound() {
+  soundOn = !soundOn;
+  if (!soundOn) { try { speechSynthesis.cancel(); } catch (e) {} }
+  document.getElementById('sndbtn').textContent = soundOn ? 'Sound: On' : 'Sound: Off';
 }
 function ask(q) {
   document.getElementById('q').value = q; send();
@@ -170,7 +178,9 @@ async function joinRoom() {
   const room = new LivekitClient.Room();
   await room.connect(d.url, d.token);
   await room.localParticipant.setMicrophoneEnabled(true);
-  document.getElementById('vout').innerHTML = '<div class="row"><b>Room:</b> joined voice-room-1, mic on</div>';
+  document.getElementById('speakbtn').disabled = false;
+  document.getElementById('joinbtn').disabled = true;
+  document.getElementById('vout').innerHTML = '<div class="row"><b>Room:</b> joined voice-room-1, mic on. Now press Speak.</div>';
 }
 async function loadHealth() {
   try {
