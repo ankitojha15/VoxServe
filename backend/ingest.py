@@ -7,10 +7,17 @@ from langchain_core.documents import Document
 from backend.chunk import splitter
 from langchain_community.document_loaders import PyPDFLoader
 
-DB_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://vox:vox123@localhost:5434/voxserve"
-)
+def pg_url(url=None):
+    u = url or os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://vox:vox123@localhost:5434/voxserve",
+    )
+    if u.startswith("postgresql://"):
+        u = "postgresql+psycopg://" + u[len("postgresql://"):]
+    return u
+
+
+DB_URL = pg_url()
 
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 

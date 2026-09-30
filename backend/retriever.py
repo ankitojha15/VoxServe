@@ -5,14 +5,11 @@ from langchain.retrievers import EnsembleRetriever
 from langchain_core.documents import Document
 from backend.chunk import splitter
 from langchain.retrievers import ContextualCompressionRetriever
-from backend.ingest import load_with_pages, load_tickets_with_pages, load_md_with_pages
+from backend.ingest import load_with_pages, load_tickets_with_pages, load_md_with_pages, pg_url
 
 
 
-DB_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://vox:vox123@localhost:5434/voxserve"
-)
+DB_URL = pg_url()
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 RERANK_PROVIDER = os.getenv("RERANK_PROVIDER", "cross")
 
