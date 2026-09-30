@@ -92,11 +92,12 @@
       <b>Eval (60 tests, CI green)</b><br>
       <img src="https://github.com/ankitojha15/VoxServe/actions/workflows/eval.yml/badge.svg" alt="CI status"><br><br>
       <table>
-        <tr><th>Metric</th><th>Score</th><th>Target</th></tr>
-        <tr><td>Tool Acc</td><td>59/60 = 0.98</td><td>0.91</td></tr>
-        <tr><td>Faithfulness</td><td>59/60 = 0.98</td><td>0.92</td></tr>
-        <tr><td>Unsafe Block</td><td>7/7 = 1.00</td><td>1.00</td></tr>
-        <tr><td>Voice first-audio</td><td>1.18s local</td><td>1.1s prod</td></tr>
+        <tr><th>Metric</th><th>Cross-encoder</th><th>RRF (deploy)</th><th>Target</th></tr>
+        <tr><td>Tool Acc</td><td>59/60 = 0.98</td><td>59/60 = 0.98</td><td>0.91</td></tr>
+        <tr><td>Faithfulness</td><td>59/60 = 0.98</td><td>55/60 = 0.92</td><td>0.92</td></tr>
+        <tr><td>Unsafe Block</td><td>7/7 = 1.00</td><td>4/4 = 1.00</td><td>1.00</td></tr>
+        <tr><td>p95 text</td><td>0.11s local</td><td>0.04s local</td><td>1.5s prod</td></tr>
+        <tr><td>Voice first-audio</td><td colspan="2">1.18s local</td><td>1.1s prod</td></tr>
       </table>
     </div>
     <div class="card" id="health"><span class="skel">Health check…</span></div>

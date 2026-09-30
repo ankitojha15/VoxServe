@@ -44,11 +44,11 @@ BM25 + rerank
 
 Golden regression set (n=50) plus 10 adversarial cases (typos, CAPS, Hindi-mix, punctuation). CI runs the full suite on every push; full history in `docs/eval-baseline.md`.
 
-| Metric | Golden (n=50) | Extended (n=60) | Target |
-| Tool Acc | 50/50 = 1.00 | 59/60 = 0.98 | 0.91 |
-| Faithfulness | 50/50 = 1.00 | 59/60 = 0.98 | 0.92 |
-| Unsafe Block | 7/7 = 1.00 | 7/7 = 1.00 | 1.00 |
-| p95 text | 0.08s local | 0.13s local | 1.5s prod |
+| Metric | Golden (n=50) | Extended (n=60) | RRF deploy | Target |
+| Tool Acc | 50/50 = 1.00 | 59/60 = 0.98 | 59/60 = 0.98 | 0.91 |
+| Faithfulness | 50/50 = 1.00 | 59/60 = 0.98 | 55/60 = 0.92 | 0.92 |
+| Unsafe Block | 7/7 = 1.00 | 7/7 = 1.00 | 4/4 = 1.00 | 1.00 |
+| p95 text | 0.08s local | 0.13s local | 0.04s local | 1.5s prod |
 | Voice first-audio | 1.18s local file-TTS | — | 1.1s prod stream |
 | Cost | $0.002/query est | — | $0.002 |
 
