@@ -5,8 +5,6 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
 from langchain_core.documents import Document
 from backend.chunk import splitter
-from langchain.retrievers.document_compressors import CrossEncoderReranker
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain.retrievers import ContextualCompressionRetriever
 from backend.ingest import load_with_pages, load_tickets_with_pages, load_md_with_pages
 
@@ -90,6 +88,9 @@ def _get_dense_bm25(domain):
 if RERANK_PROVIDER == "rrf":
     _compressor = None
 else:
+    from langchain.retrievers.document_compressors import CrossEncoderReranker
+    from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+
     _reranker_model = HuggingFaceCrossEncoder(
         model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
     )
