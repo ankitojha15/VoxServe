@@ -1,5 +1,5 @@
 import os
-from langchain_huggingface import HuggingFaceEmbeddings
+from backend.embeddings import get_embeddings, MODEL as EMBED_MODEL
 from langchain_postgres import PGVector
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
@@ -18,7 +18,7 @@ DB_URL = os.getenv(
 )
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
-_embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+_embeddings = get_embeddings()
 def _make_store(collection):
     return PGVector(
         embeddings=_embeddings,

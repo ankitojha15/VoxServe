@@ -1,7 +1,7 @@
 import os
 import re
 import glob
-from langchain_huggingface import HuggingFaceEmbeddings
+from backend.embeddings import get_embeddings, MODEL as EMBED_MODEL
 from langchain_postgres import PGVector
 from langchain_core.documents import Document
 from backend.chunk import splitter
@@ -89,7 +89,7 @@ URLS = [
         # "https://example.com/shipping-help",
     ]
 if __name__ == "__main__":
-    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+    embeddings = get_embeddings()
     print(f"Embedding model: {EMBED_MODEL}")
 
     policy_docs = []
