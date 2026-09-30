@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: voxserve-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: voxserve-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: voxserve-cache
+          property: connectionString
+      - key: MCP_API_KEY
+        sync: false
+      - key: EMBED_MODEL
+        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_HOST
+        value: https://us.cloud.langfuse.com
+
+databases:
+  - name: voxserve-db
+    plan: free
+    postgresMajorVersion: 16
+
+services2:
+  - type: keyvalue
+    name: voxserve-cache
+    plan: free
