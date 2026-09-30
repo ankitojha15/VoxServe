@@ -92,6 +92,33 @@ def sources():
             pass
     return {"policy_files": files, "urls": []}
 
+@app.get("/admin/ingest")
+def admin_ingest(key: str = ""):
+    if key != os.getenv("MCP_API_KEY", "vox-secret-123"):
+        return {"error": "unauthorized"}
+    from backend.ingest import (
+        load_md_with_pages, load_pdf_with_pages,
+        load_tickets_with_pages, DB_URL,
+    )
+    import glob as _glob
+    from backend.embeddings import get_embeddings
+    from langchain_postgres import PGVector
+    docs = []
+    for fp in sorted(_glob.glob("data/raw/*.md")):
+        docs.extend(load_md_with_pages(fp))
+    for fp in _glob.glob("data/raw/*.pdf"):
+        docs.extend(load_pdf_with_pages(fp))
+    emb = get_embeddings()
+    store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
+    try:
+        store.delete_collection()
+    except Exception:
+        pass
+    store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
+    if docs:
+        store.add_documents(docs)
+    return {"policy_chunks": len(docs)}
+
 @app.delete("/ingest/file")
 def delete_file(name: str):
     import glob
