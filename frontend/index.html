@@ -60,6 +60,7 @@
         <button class="ghost" onclick="ask('Show my past tickets')">past tickets</button>
         <button class="ghost" onclick="ask('Cancel my order 1002')">cancel order</button>
         <button class="ghost" onclick="ask('Track order 9999')">unknown id</button>
+        <button class="ghost" onclick="ask('No of leave day at acme')">acme leaves</button>
       </div>
     </div>
     <div class="card">
@@ -70,8 +71,8 @@
   <div id="c-docs" class="tab">
     <div class="card">
       <b>Upload policy PDF</b><br><br>
-      <input type="file" id="pdf" accept=".pdf">
-      <button class="act" onclick="uploadPdf()">Upload + Ingest</button>
+      <input type="file" id="pdf" accept=".pdf" onchange="document.getElementById('upbtn').disabled = false">
+      <button class="act" id="upbtn" onclick="uploadPdf()" disabled>Upload + Ingest</button>
       <span id="upmsg" class="skel"></span>
     </div>
     <div class="card">
@@ -172,17 +173,23 @@ async function uploadPdf() {
   const r = await fetch('/ingest/pdf', {method: 'POST', body: fd});
   const d = await r.json();
   document.getElementById('upmsg').textContent = 'Ingested ' + d.chunks + ' chunks from ' + d.file;
+  document.getElementById('pdf').value = '';
+  document.getElementById('upbtn').disabled = true;
   loadSources();
 }
 async function loadSources() {
   const r = await fetch('/sources');
   const d = await r.json();
-  let h = '<table><tr><th>File</th><th>Size (KB)</th></tr>';
-  for (const f of d.policy_files) h += '<tr><td>' + f.name + '</td><td>' + f.kb + '</td></tr>';
+  let h = '<table><tr><th>File</th><th>Size (KB)</th><th></th></tr>';
+  for (const f of d.policy_files) h += '<tr><td>' + f.name + '</td><td>' + f.kb + '</td><td><button class="ghost" onclick="delFile(\'' + f.name + '\')">Delete</button></td></tr>';
   document.getElementById('sources').innerHTML = h + '</table>';
 }
-async function joinRoom() {
-  const r = await fetch('/voice/token', {
+async function delFile(name) {
+  const f = name.split('/').pop();
+  await fetch('/ingest/file?name=' + encodeURIComponent(f), {method: 'DELETE'});
+  loadSources();
+}
+async function joinRoom() {  const r = await fetch('/voice/token', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({room: 'voice-room-1', name: 'web1'})
   });
