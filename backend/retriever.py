@@ -58,22 +58,62 @@ ensemble_tickets = EnsembleRetriever(
     weights=[0.7, 0.3]
 )
 
-_reranker_model = HuggingFaceCrossEncoder(
-    model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
-)
-_compressor = CrossEncoderReranker(model=_reranker_model, top_n=4)
-final_policy = ContextualCompressionRetriever(
-    base_compressor=_compressor,
-    base_retriever=ensemble_policy
-)
-final_tickets = ContextualCompressionRetriever(
-    base_compressor=_compressor,
-    base_retriever=ensemble_tickets
-)
+RERANK_PROVIDER = os.getenv("RERANK_PROVIDER", "cross")
+
+
+def _rrf_fuse(query, dense_r, bm25_r, k=20, top_n=4, const=60):
+    """Pure-python Reciprocal Rank Fusion over two retrievers (no torch, no API)."""
+    scores = {}
+    order = {}
+
+    def _key(d):
+        return (d.metadata.get("source", ""), d.metadata.get("page", 0), d.page_content[:200])
+
+    for rank, d in enumerate(dense_r.invoke(query)[:k] if hasattr(dense_r, "invoke") else [], start=1):
+        kk = _key(d)
+        scores[kk] = scores.get(kk, 0.0) + 1.0 / (const + rank)
+        order.setdefault(kk, d)
+    for rank, d in enumerate(bm25_r.invoke(query)[:k] if hasattr(bm25_r, "invoke") else [], start=1):
+        kk = _key(d)
+        scores[kk] = scores.get(kk, 0.0) + 1.0 / (const + rank)
+        order.setdefault(kk, d)
+    ranked = sorted(scores, key=scores.get, reverse=True)
+    return [order[kk] for kk in ranked[:top_n]]
+
+
+def _get_dense_bm25(domain):
+    if domain == "tickets":
+        return dense_tickets, bm25_tickets
+    return dense_policy, bm25_policy
+
+
+if RERANK_PROVIDER == "rrf":
+    _compressor = None
+else:
+    _reranker_model = HuggingFaceCrossEncoder(
+        model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
+    )
+    _compressor = CrossEncoderReranker(model=_reranker_model, top_n=4)
+if _compressor is None:
+    final_policy = None
+    final_tickets = None
+else:
+    final_policy = ContextualCompressionRetriever(
+        base_compressor=_compressor,
+        base_retriever=ensemble_policy
+    )
+    final_tickets = ContextualCompressionRetriever(
+        base_compressor=_compressor,
+        base_retriever=ensemble_tickets
+    )
 
 def search(query, k=4, domain="policy"):
-    retriever = final_tickets if domain == "tickets" else final_policy
-    docs = retriever.invoke(query)
+    if RERANK_PROVIDER == "rrf":
+        dense_r, bm25_r = _get_dense_bm25(domain)
+        docs = _rrf_fuse(query, dense_r, bm25_r, k=20, top_n=k)
+    else:
+        retriever = final_tickets if domain == "tickets" else final_policy
+        docs = retriever.invoke(query)
     results = []
     for d in docs[:k]:
         results.append({
