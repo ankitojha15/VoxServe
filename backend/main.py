@@ -92,6 +92,34 @@ def sources():
             pass
     return {"policy_files": files, "urls": []}
 
+@app.delete("/ingest/file")
+def delete_file(name: str):
+    import glob
+    base = os.path.basename(name)
+    path = os.path.join("data", "raw", base)
+    if not os.path.isfile(path):
+        return {"deleted": False}
+    os.remove(path)
+    from backend.ingest import load_md_with_pages, load_pdf_with_pages, EMBED_MODEL, DB_URL
+    import glob as _glob
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_postgres import PGVector
+    docs = []
+    for fp in sorted(_glob.glob("data/raw/*.md")):
+        docs.extend(load_md_with_pages(fp))
+    for fp in _glob.glob("data/raw/*.pdf"):
+        docs.extend(load_pdf_with_pages(fp))
+    emb = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+    store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
+    try:
+        store.delete_collection()
+    except Exception:
+        pass
+    store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
+    if docs:
+        store.add_documents(docs)
+    return {"deleted": True, "file": base, "policy_chunks": len(docs)}
+
 @app.post("/chat")
 def chat(body: ChatIn):
     import re as _re2
