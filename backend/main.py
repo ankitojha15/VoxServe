@@ -41,7 +41,7 @@ class ChatIn(BaseModel):
 
 @app.get("/")
 def root():
-    return {"message": "VoxServe is running"}
+    return FileResponse("frontend/index.html")
 
 @app.get("/health")
 def health():
