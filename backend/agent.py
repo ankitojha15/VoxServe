@@ -28,7 +28,7 @@ def intent_node(state: State):
         return {"intent": "order"}
     if "ticket" in q or "stuck" in q or "failed" in q:
         return {"intent": "ticket"}
-    if any(w in q for w in ("refund", "ship", "deliver", "policy", "policies", "return", "cancellation", "cancel", "privacy", "account", "warranty", "payment", "terms", "price", "pric")):
+    if any(w in q for w in ("refund", "ship", "deliver", "policy", "policies", "return", "cancellation", "cancel", "privacy", "account", "warranty", "payment", "terms", "price", "pric", "leave", "leaves", "notice", "period", "wfh", "maternity", "salary", "holiday", "holidays")):
         return {"intent": "policy"}
     return {"intent": "unknown", "confidence": 0.5}
 
