@@ -83,7 +83,24 @@ def responder(state: State):
     if not docs:
         return {"answer": "Escalated to human agent, no docs found."}
     top = docs[0]
-    return {"answer": f"{top['text'][:300]} [{top['source']} page {top['page']}]"}
+    raw = (top['text'] or '').strip().replace('\r', '')
+    parts = []
+    for ln in raw.split('\n'):
+        ln = ln.strip(' .-')
+        if not ln:
+            continue
+        if len(ln) > 180:
+            for s in _re.split(r'(?<=[.;:])\s+', ln):
+                s = s.strip(' .-')
+                if s:
+                    parts.append(s)
+        else:
+            parts.append(ln)
+        if len(parts) >= 5:
+            break
+    parts = parts[:5] or [raw[:300]]
+    body = '\n'.join(f'• {p}' if not p.startswith(('•', '-', '1.', '2.', '3.', '4.', '5.')) else p for p in parts)
+    return {"answer": f"{body}\n\n[{top['source']} page {top['page']}]"}
 
 graph = StateGraph(State)
 graph.add_node("intent_step", intent_node)
