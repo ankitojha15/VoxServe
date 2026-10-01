@@ -25,6 +25,12 @@ def intent_node(state: State):
     if any(w in q for w in ("cancel", "delete", "remove", "chargeback")) and ("my " in q or "order" in q or "#" in q):
         return {"intent": "unknown", "confidence": 0.4}
     if "order" in q or "track" in q or "#" in q:
+        # Generic how-to questions about orders are policy questions, not tracking.
+        # e.g. "how to return my order" -> policy; "where is my order 1001?" -> order.
+        if any(w in q for w in ("how ", "how to", "kaise", "process", "way to")):
+            return {"intent": "policy"}
+        if "return" in q and not _re.search(r"#?\d{4}", q):
+            return {"intent": "policy"}
         return {"intent": "order"}
     if "ticket" in q or "stuck" in q or "failed" in q:
         return {"intent": "ticket"}
