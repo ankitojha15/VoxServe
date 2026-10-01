@@ -231,14 +231,20 @@ function mic() {
 async function uploadPdf() {
   const f = document.getElementById('pdf').files[0];
   if (!f) return;
-  document.getElementById('upmsg').textContent = 'Uploading…';
-  const fd = new FormData(); fd.append('file', f);
-  const r = await fetch('/ingest/pdf', {method: 'POST', body: fd});
-  const d = await r.json();
-  document.getElementById('upmsg').textContent = 'Ingested ' + d.chunks + ' chunks from ' + d.file;
-  document.getElementById('pdf').value = '';
-  document.getElementById('upbtn').disabled = true;
-  loadSources();
+  const msg = document.getElementById('upmsg');
+  msg.textContent = 'Uploading…';
+  try {
+    const fd = new FormData(); fd.append('file', f);
+    const r = await fetch('/ingest/pdf', {method: 'POST', body: fd});
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || ('server ' + r.status));
+    msg.textContent = 'Uploaded ' + d.chunks + ' chunks from ' + d.file;
+    document.getElementById('pdf').value = '';
+    document.getElementById('upbtn').disabled = true;
+    loadSources();
+  } catch (e) {
+    msg.textContent = 'Failed: ' + e.message + '. Try again or check server logs.';
+  }
 }
 async function loadSources() {
   const r = await fetch('/sources');
@@ -252,17 +258,24 @@ async function delFile(name) {
   await fetch('/ingest/file?name=' + encodeURIComponent(f), {method: 'DELETE'});
   loadSources();
 }
-async function joinRoom() {  const r = await fetch('/voice/token', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({room: 'voice-room-1', name: 'web1'})
-  });
-  const d = await r.json();
-  const room = new LivekitClient.Room();
-  await room.connect(d.url, d.token);
-  await room.localParticipant.setMicrophoneEnabled(true);
-  document.getElementById('speakbtn').disabled = false;
-  document.getElementById('joinbtn').disabled = true;
-  document.getElementById('vout').innerHTML = '<div class="row"><b>Room:</b> joined voice-room-1, mic on. Now press Speak.</div>';
+async function joinRoom() {
+  const vout = document.getElementById('vout');
+  try {
+    const r = await fetch('/voice/token', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({room: 'voice-room-1', name: 'web1'})
+    });
+    const d = await r.json();
+    if (!r.ok || d.error || !d.token || !d.url) throw new Error(d.error || ('server ' + r.status));
+    const room = new LivekitClient.Room();
+    await room.connect(d.url, d.token);
+    await room.localParticipant.setMicrophoneEnabled(true);
+    document.getElementById('speakbtn').disabled = false;
+    document.getElementById('joinbtn').disabled = true;
+    vout.innerHTML = '<div class="row"><b>Room:</b> joined voice-room-1, mic on. Now press Speak.</div>';
+  } catch (e) {
+    vout.innerHTML = '<div class="row bad"><b>Voice room failed:</b> ' + e.message + '</div>';
+  }
 }
 async function loadHealth() {
   try {
