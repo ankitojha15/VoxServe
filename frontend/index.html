@@ -123,7 +123,15 @@ async function send() {
   btn.disabled = true;
   const q = document.getElementById('q').value;
   const box = document.getElementById('out');
-  box.innerHTML = '<span class="skel">Thinking…</span>';
+  const escHtml = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const fmt = s => escHtml(s).replace(/\n/g, '<br>');
+  if (box.querySelector('.skel')) box.innerHTML = '';
+  const t = new Date().toLocaleTimeString();
+  box.innerHTML += '<div class="row"><b>You:</b> ' + escHtml(q) + ' <span class="cite">' + t + '</span></div>';
+  const think = document.createElement('div');
+  think.className = 'row skel';
+  think.textContent = 'Thinking…';
+  box.appendChild(think);
   try {
     const r = await fetch('/chat', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -131,17 +139,20 @@ async function send() {
     });
     if (!r.ok) throw new Error('server ' + r.status);
   const d = await r.json();
-  const t = new Date().toLocaleTimeString();
+  think.remove();
   const esc = d.intent === 'unknown' || (d.answer || '').indexOf('Escalated') === 0;
-  const escHtml = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const fmt = s => escHtml(s).replace(/\n/g, '<br>');
-  if (box.querySelector('.skel')) box.innerHTML = '';
-  box.innerHTML += '<div class="row"><b>You:</b> ' + escHtml(q) + ' <span class="cite">' + t + '</span></div>'
-    + '<div class="row' + (esc ? ' bad' : '') + '"><b>Bot [' + d.intent + ' ' + d.confidence + ']:</b><br>'
+  let html = '<div class="row' + (esc ? ' bad' : '') + '"><b>Bot [' + d.intent + ' ' + d.confidence + ']:</b><br>'
     + fmt(d.answer) + (d.cached ? ' <span class="badge">cached' + (d.cached === true ? '' : ': ' + d.cached) + '</span>' : '') + '</div>';
+  if (d.need_id) {
+    html += '<div class="row"><span class="cite">Choose an ID:</span> '
+      + ['1001', '1002', '1003', '9999'].map(id => '<button class="ghost" onclick="ask(\'Where is my order ' + id + '?\')">' + id + '</button>').join(' ')
+      + '</div>';
+  }
+  box.innerHTML += html;
   try { if (soundOn) speechSynthesis.speak(new SpeechSynthesisUtterance((d.answer || '').slice(0, 200))); } catch (e) {}
   } catch (e) {
-    box.innerHTML = '<div class="row bad"><b>Error:</b> server not reachable. Start the backend first.</div>';
+    think.remove();
+    box.innerHTML += '<div class="row bad"><b>Error:</b> server not reachable. Start the backend first.</div>';
   }
   btn.disabled = false;
 }
