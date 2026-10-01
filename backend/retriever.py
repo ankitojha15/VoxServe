@@ -47,10 +47,20 @@ def _dense(domain):
 
 def _bm25_docs_policy():
     import glob as _glob
+    from backend.ingest import load_pdf_with_pages
     docs = []
     for fpath in sorted(_glob.glob("data/raw/*.md")):
         docs.extend(load_md_with_pages(fpath))
+    for fpath in sorted(_glob.glob("data/raw/*.pdf")):
+        try:
+            docs.extend(load_pdf_with_pages(fpath))
+        except Exception:
+            continue
     return docs
+
+
+def clear_cache():
+    _cache.clear()
 
 
 def _bm25_docs_tickets():
