@@ -84,22 +84,28 @@ def responder(state: State):
         return {"answer": "Escalated to human agent, no docs found."}
     top = docs[0]
     raw = (top['text'] or '').strip().replace('\r', '')
-    parts = []
+    lines = []
     for ln in raw.split('\n'):
-        ln = ln.strip(' .-')
+        ln = _re.sub(r'^#+\s*', '', ln).replace('**', '').strip()
         if not ln:
             continue
-        if len(ln) > 180:
-            for s in _re.split(r'(?<=[.;:])\s+', ln):
-                s = s.strip(' .-')
-                if s:
-                    parts.append(s)
-        else:
-            parts.append(ln)
-        if len(parts) >= 5:
+        is_heading = bool(_re.match(r'^\d+\.\s+\S', ln)) and not _re.match(r'^\d+\.\d+', ln)
+        segs = _re.split(r'(?<=[.;:])\s+', ln) if len(ln) > 110 else [ln]
+        for s in segs:
+            s = s.strip(' .-')
+            if not s:
+                continue
+            if is_heading:
+                lines.append(s)
+                lines.append("")
+            elif _re.match(r'^\d+\.\d+\s', s) or s.startswith(("-", "•")):
+                lines.append(s)
+            else:
+                lines.append(f"• {s}")
+        if len([x for x in lines if x]) >= 6:
             break
-    parts = parts[:5] or [raw[:300]]
-    body = '\n'.join(f'• {p}' if not p.startswith(('•', '-', '1.', '2.', '3.', '4.', '5.')) else p for p in parts)
+    lines = lines[:8] or [raw[:300]]
+    body = '\n'.join(lines).strip()
     return {"answer": f"{body}\n\n[{top['source']} page {top['page']}]"}
 
 graph = StateGraph(State)
