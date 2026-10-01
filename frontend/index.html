@@ -15,7 +15,7 @@
   .tab { display: none; }
   .tab.on { display: block; }
   .card { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 12px; }
-  .row { font-size: 14px; padding: 8px 0; border-top: 1px solid #eee; }
+  .row { font-size: 14px; padding: 8px 0; border-top: 1px solid #eee; white-space: pre-wrap; }
   .row:first-child { border-top: none; }
   .cite { font-size: 12px; color: #555; }
   .badge { font-size: 11px; border: 1px solid #999; border-radius: 4px; padding: 1px 6px; color: #333; }
@@ -133,10 +133,12 @@ async function send() {
   const d = await r.json();
   const t = new Date().toLocaleTimeString();
   const esc = d.intent === 'unknown' || (d.answer || '').indexOf('Escalated') === 0;
+  const escHtml = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const fmt = s => escHtml(s).replace(/\n/g, '<br>');
   if (box.querySelector('.skel')) box.innerHTML = '';
-  box.innerHTML += '<div class="row"><b>You:</b> ' + q + ' <span class="cite">' + t + '</span></div>'
-    + '<div class="row' + (esc ? ' bad' : '') + '"><b>Bot [' + d.intent + ' ' + d.confidence + ']:</b> '
-    + d.answer + (d.cached ? ' <span class="badge">cached' + (d.cached === true ? '' : ': ' + d.cached) + '</span>' : '') + '</div>';
+  box.innerHTML += '<div class="row"><b>You:</b> ' + escHtml(q) + ' <span class="cite">' + t + '</span></div>'
+    + '<div class="row' + (esc ? ' bad' : '') + '"><b>Bot [' + d.intent + ' ' + d.confidence + ']:</b><br>'
+    + fmt(d.answer) + (d.cached ? ' <span class="badge">cached' + (d.cached === true ? '' : ': ' + d.cached) + '</span>' : '') + '</div>';
   try { if (soundOn) speechSynthesis.speak(new SpeechSynthesisUtterance((d.answer || '').slice(0, 200))); } catch (e) {}
   } catch (e) {
     box.innerHTML = '<div class="row bad"><b>Error:</b> server not reachable. Start the backend first.</div>';
