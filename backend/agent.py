@@ -60,28 +60,70 @@ def tool_router(state: State):
         return {"tool_result": get_policy(topic, API_KEY)}
     return {"tool_result": {}}
 
-def responder(state: State):
-    if state.get("tool_result", {}).get("ask") == "order_id":
-        return {"answer": "Please share your 4-digit order ID (e.g. 1001) so I can check the live status."}
-    if state.get("confidence", 0.9) < 0.7:
-        return {"answer": "Escalated to human agent due to low confidence."}
-    if state.get("intent") == "order":
-        r = state.get("tool_result", {})
-        _m = _re.search(r"#?(\d{4})", state.get("query", ""))
-        _oid = _m.group(1) if _m else ""
-        return {"answer": f"Order {_oid} status: {r.get('status', 'unknown')}, tracking: {r.get('tracking', '-')}"}
-    if state.get("intent") == "ticket":
-        r = state.get("tool_result", {})
-        if "tickets" in r:
-            found = r["tickets"]
-            if not found:
-                return {"answer": "No past tickets found for that."}
-            lines = "; ".join(f"{t.get('ticket_id')}: {t.get('issue')}" for t in found[:5])
-            return {"answer": f"Found {len(found)} past ticket(s): {lines}"}
-        return {"answer": f"Ticket {r.get('ticket_id', '-')} created for your issue."}
-    docs = state.get("docs", [])
-    if not docs:
-        return {"answer": "Escalated to human agent, no docs found."}
+def _plain(text: str) -> str:
+    """Strip markdown so answers render as clean plain lines."""
+    out = []
+    for ln in (text or "").split("\n"):
+        ln = ln.strip()
+        ln = _re.sub(r"^#+\s*", "", ln)  # ### heading -> plain
+        ln = _re.sub(r"^>\s*", "", ln)  # quote -> plain
+        ln = ln.replace("**", "").replace("__", "").replace("`", "")
+        ln = ln.replace("|", " ")  # tables -> spaces
+        ln = _re.sub(r"\*(?=\S)", "", ln)  # stray * before word
+        ln = _re.sub(r"(?<=\S)\*", "", ln)  # stray * after word
+        ln = _re.sub(r"\s{2,}", " ", ln).strip()
+        if ln in ("-", "*", "."):
+            ln = ""
+        elif ln.startswith(("- ", "* ")):
+            ln = "• " + ln[2:].strip()
+        elif ln.startswith("• "):
+            ln = "• " + ln[2:].strip()
+        out.append(ln)
+    while out and not out[0]:
+        out.pop(0)
+    while out and not out[-1]:
+        out.pop()
+    return "\n".join(out)
+
+
+_LLM = None
+
+def _get_llm():
+    global _LLM
+    if _LLM is None:
+        from langchain_groq import ChatGroq
+        _LLM = ChatGroq(
+            model=os.getenv("LLM_MODEL", "openai/gpt-oss-20b"),
+            groq_api_key=os.getenv("GROQ_API_KEY"),
+            temperature=0,
+        )
+    return _LLM
+
+
+_SYS = (
+    "You are VoxServe, a customer support assistant. Answer ONLY from the numbered "
+    "context below. Rules: plain text only (no markdown, no #, no *, no ` characters), "
+    "maximum 4 short lines, then one blank line, then exactly one line like "
+    "[SHIPPING_POLICY.md page 2] copied from the context. "
+    "If the context does not contain the answer, reply exactly: "
+    "Escalated to human agent, no docs found."
+)
+
+def _llm_answer(query: str, docs) -> str:
+    ctx = "\n\n".join(
+        f"[{d.get('source')} page {d.get('page')}]\n{(d.get('text') or '')[:700]}"
+        for d in docs[:4]
+    )
+    resp = _get_llm().invoke([("system", _SYS), ("human", f"Context:\n{ctx}\n\nQuestion: {query}")])
+    ans = _plain(resp.content if hasattr(resp, "content") else str(resp))
+    if not _re.search(r"\[.+\.(?:md|pdf) page \d+\]", ans):
+        top = docs[0]
+        ans += f"\n\n[{top['source']} page {top['page']}]"
+    return ans
+
+
+def _docs_answer(docs) -> str:
+    """Deterministic fallback: top chunk as short bullet lines."""
     top = docs[0]
     raw = (top['text'] or '').strip().replace('\r', '')
     lines = []
@@ -106,7 +148,36 @@ def responder(state: State):
             break
     lines = lines[:8] or [raw[:300]]
     body = '\n'.join(lines).strip()
-    return {"answer": f"{body}\n\n[{top['source']} page {top['page']}]"}
+    return f"{body}\n\n[{top['source']} page {top['page']}]"
+
+
+def responder(state: State):
+    if state.get("tool_result", {}).get("ask") == "order_id":
+        return {"answer": "Please share your 4-digit order ID (e.g. 1001) so I can check the live status."}
+    if state.get("confidence", 0.9) < 0.7:
+        return {"answer": "Escalated to human agent due to low confidence."}
+    if state.get("intent") == "order":
+        r = state.get("tool_result", {})
+        _m = _re.search(r"#?(\d{4})", state.get("query", ""))
+        _oid = _m.group(1) if _m else ""
+        return {"answer": f"Order {_oid} status: {r.get('status', 'unknown')}, tracking: {r.get('tracking', '-')}"}
+    if state.get("intent") == "ticket":
+        r = state.get("tool_result", {})
+        if "tickets" in r:
+            found = r["tickets"]
+            if not found:
+                return {"answer": "No past tickets found for that."}
+            lines = "\n".join(f"• {t.get('ticket_id')}: {t.get('issue')}" for t in found[:5])
+            return {"answer": _plain(f"Found {len(found)} past ticket(s):\n{lines}")}
+        return {"answer": f"Ticket {r.get('ticket_id', '-')} created for your issue."}
+    docs = state.get("docs", [])
+    if not docs:
+        return {"answer": "Escalated to human agent, no docs found."}
+    try:
+        answer = _llm_answer(state.get("query", ""), docs)
+    except Exception:
+        answer = _docs_answer(docs)  # LLM down -> same answer path still works
+    return {"answer": _plain(answer)}
 
 graph = StateGraph(State)
 graph.add_node("intent_step", intent_node)
