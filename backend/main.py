@@ -27,6 +27,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def no_store_html(request, call_next):
+    resp = await call_next(request)
+    if request.url.path in ("/", "/demo"):
+        resp.headers["Cache-Control"] = "no-store"
+    return resp
+
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 r = redis.from_url(REDIS_URL, decode_responses=True)
 
