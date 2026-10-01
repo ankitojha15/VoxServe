@@ -172,8 +172,10 @@ def chat(body: ChatIn):
             pass
 
         from backend.sem_cache import sem_get
+        from backend.agent import intent_node
+        current_intent = intent_node({"query": body.query}).get("intent")
         sem_hit = sem_get(body.query)
-        if sem_hit:
+        if sem_hit and sem_hit.get("intent") == current_intent:
             return sem_hit
     
     out = agent_app.invoke({"query": body.query})
