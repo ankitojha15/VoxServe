@@ -182,6 +182,7 @@ def chat(body: ChatIn):
         "intent": out.get("intent", ""),
         "confidence": out.get("confidence", 0.0),
         "cached": False,
+        "need_id": out.get("tool_result", {}).get("ask") == "order_id",
     }
 
     trace_chat(_lf, body.query, data["answer"], data["intent"])
