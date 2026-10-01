@@ -1,9 +1,12 @@
 import json
 import math
+import re as _re2
 import redis
 import os
 
 r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6380"), decode_responses=True)
+
+_HAS_ID = _re2.compile(r"\d{4}")
 
 def _cos(a, b):
     dot = sum(x * y for x, y in zip(a, b))
@@ -12,9 +15,11 @@ def _cos(a, b):
     return dot / (na * nb) if na and nb else 0.0
 
 def sem_get(query, thresh=0.90):
+    if _HAS_ID.search(query or ""):
+        return None  # order IDs differ by 1 digit but mean different orders
     try:
-        from backend.retriever import _embeddings
-        qv = _embeddings.embed_query(query)
+        from backend.embeddings import get_embeddings
+        qv = get_embeddings().embed_query(query)
         for key in r.scan_iter("sem:*"):
             d = json.loads(r.get(key))
             if _cos(qv, d["vec"]) >= thresh:
@@ -26,9 +31,11 @@ def sem_get(query, thresh=0.90):
     return None
 
 def sem_set(query, data, ttl=3600):
+    if _HAS_ID.search(query or ""):
+        return
     try:
-        from backend.retriever import _embeddings
-        qv = _embeddings.embed_query(query)
+        from backend.embeddings import get_embeddings
+        qv = get_embeddings().embed_query(query)
         r.setex(f"sem:{query.strip().lower()}", ttl, json.dumps({"vec": qv, "data": data}))
     except Exception:
         pass
