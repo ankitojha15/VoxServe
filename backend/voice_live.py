@@ -23,9 +23,22 @@ def make_token(room: str = "voice-room-1", name: str = "user1"):
     ).to_jwt()
     return token
 
+def _clean_for_speech(text: str) -> str:
+    import re as _re3
+    text = _re3.sub(r"\[.*?page \d+\]", " ", text or "")
+    text = text.replace("•", " ").replace("#", " ").replace("*", " ")
+    return _re3.sub(r"\s{2,}", " ", text).strip()
+
 def speak(text: str, out: str = "out.mp3"):
-    gTTS(text=text, lang="en").save(out)
-    return out
+    text = _clean_for_speech(text)
+    try:
+        import asyncio as _aio
+        import edge_tts as _edge
+        _aio.run(_edge.Communicate(text, "en-IN-NeerjaNeural").save(out))
+        return out
+    except Exception:
+        gTTS(text=text, lang="en").save(out)
+        return out
 
 async def room_test():
     from livekit import rtc
