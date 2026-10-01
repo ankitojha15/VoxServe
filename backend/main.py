@@ -108,24 +108,31 @@ async def voice_speak(body: SpeakIn):
 
 @app.post("/voice/token")
 def voice_token(body: TokenIn):
+    if not os.getenv("LIVEKIT_URL") or not os.getenv("LIVEKIT_API_KEY") or not os.getenv("LIVEKIT_API_SECRET"):
+        return {"error": "voice not configured"}
     from backend.voice_live import make_token
     return {"token": make_token(body.room, body.name), "url": os.getenv("LIVEKIT_URL")}
 
 
 @app.post("/ingest/pdf")
 def ingest_pdf(file: UploadFile = File(...)):
-    path = f"data/raw/{file.filename}"
-    with open(path, "wb") as f:
-        f.write(file.file.read())
-    from backend.ingest import load_pdf_with_pages
-    from backend.embeddings import get_embeddings
-    from langchain_postgres import PGVector
-    docs = load_pdf_with_pages(path)
-    emb = get_embeddings()
-    store = PGVector(embeddings=emb, collection_name="vox_policy", connection=os.getenv("DATABASE_URL", "postgresql+psycopg://vox:vox123@localhost:5434/voxserve"), use_jsonb=True)
-    if docs:
-        store.add_documents(docs)
-    return {"file": file.filename, "chunks": len(docs)}
+    try:
+        path = f"data/raw/{file.filename}"
+        with open(path, "wb") as f:
+            f.write(file.file.read())
+        from backend.ingest import load_pdf_with_pages
+        from backend.embeddings import get_embeddings
+        from langchain_postgres import PGVector
+        docs = load_pdf_with_pages(path)
+        emb = get_embeddings()
+        store = PGVector(embeddings=emb, collection_name="vox_policy", connection=os.getenv("DATABASE_URL", "postgresql+psycopg://vox:vox123@localhost:5434/voxserve"), use_jsonb=True)
+        if docs:
+            store.add_documents(docs)
+        from backend.retriever import clear_cache
+        clear_cache()
+        return {"file": file.filename, "chunks": len(docs)}
+    except Exception as e:
+        return {"error": str(e)[:200]}
 
 @app.get("/sources")
 def sources():
@@ -163,6 +170,8 @@ def admin_ingest(key: str = ""):
     store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
     if docs:
         store.add_documents(docs)
+    from backend.retriever import clear_cache
+    clear_cache()
     return {"policy_chunks": len(docs)}
 
 @app.delete("/ingest/file")
@@ -191,6 +200,8 @@ def delete_file(name: str):
     store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
     if docs:
         store.add_documents(docs)
+    from backend.retriever import clear_cache
+    clear_cache()
     return {"deleted": True, "file": base, "policy_chunks": len(docs)}
 
 @app.post("/chat")
