@@ -6,6 +6,9 @@ import os
 
 r = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6380"), decode_responses=True)
 
+# Bump on answer-format or intent-logic changes so deploys never serve stale cache.
+CACHE_VERSION = "v2"
+
 _HAS_ID = _re2.compile(r"\d{4}")
 
 def _cos(a, b):
@@ -20,7 +23,7 @@ def sem_get(query, thresh=0.90):
     try:
         from backend.embeddings import get_embeddings
         qv = get_embeddings().embed_query(query)
-        for key in r.scan_iter("sem:*"):
+        for key in r.scan_iter(f"sem:{CACHE_VERSION}:*"):
             d = json.loads(r.get(key))
             if _cos(qv, d["vec"]) >= thresh:
                 data = d["data"]
@@ -36,6 +39,6 @@ def sem_set(query, data, ttl=3600):
     try:
         from backend.embeddings import get_embeddings
         qv = get_embeddings().embed_query(query)
-        r.setex(f"sem:{query.strip().lower()}", ttl, json.dumps({"vec": qv, "data": data}))
+        r.setex(f"sem:{CACHE_VERSION}:{query.strip().lower()}", ttl, json.dumps({"vec": qv, "data": data}))
     except Exception:
         pass

@@ -160,7 +160,7 @@ def chat(body: ChatIn):
     import re as _re2
     ql = body.query.strip().lower()
     is_write = "ticket" in ql and any(w in ql for w in ("create", "new", "book", "file"))
-    key = f"chat:{ql}"
+    key = f"chat:v2:{ql}"
     if not is_write:
         try:
             cached = r.get(key)
