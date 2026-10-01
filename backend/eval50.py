@@ -1,4 +1,7 @@
 import time
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 from backend.agent import app as agent_app
 
 base = [
