@@ -11,6 +11,8 @@ base = [
     ("How many days for COD refund?", "policy", "REFUND_POLICY.md"),
     ("Can I cancel after dispatch?", "policy", "RETURN_CANCELLATION_POLICY.md"),
     ("How to close my account and erase data?", "policy", "PRIVACY_POLICY.md"),
+    ("How to return a damaged item?", "policy", "REFUND_POLICY.md|RETURN_CANCELLATION_POLICY.md"),
+    ("What is the return pickup process?", "policy", "REFUND_POLICY.md|RETURN_CANCELLATION_POLICY.md"),
     ("Who pays return shipping for defective items?", "policy", "RETURN_CANCELLATION_POLICY.md"),
     ("Delivery stuck, create ticket", "ticket", "T"),
     ("xyz blabla unknown {n}", "unknown", "Escalated"),
