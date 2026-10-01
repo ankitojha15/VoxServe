@@ -68,6 +68,44 @@ class TokenIn(BaseModel):
     room: str = "voice-room-1"
     name: str = "user1"
 
+class SpeakIn(BaseModel):
+    text: str = ""
+    voice: str = "en-IN-NeerjaNeural"
+
+@app.post("/voice/speak")
+async def voice_speak(body: SpeakIn):
+    from backend.voice_live import _clean_for_speech
+    text = _clean_for_speech(body.text)[:500]
+    if not text:
+        return {"error": "empty text"}
+    voice = body.voice or "en-IN-NeerjaNeural"
+    try:
+        import edge_tts
+        chunks = []
+        async for part in edge_tts.Communicate(text, voice).stream():
+            if part.get("type") == "audio":
+                chunks.append(part.get("data", b""))
+        audio = b"".join(chunks)
+        if not audio:
+            raise RuntimeError("empty audio")
+        from fastapi.responses import Response
+        return Response(content=audio, media_type="audio/mpeg")
+    except Exception:
+        pass
+    try:
+        import io
+        from gtts import gTTS
+        buf = io.BytesIO()
+        gTTS(text=text, lang="en").write_to_fp(buf)
+        audio = buf.getvalue()
+        if not audio:
+            raise RuntimeError("empty audio")
+        from fastapi.responses import Response
+        return Response(content=audio, media_type="audio/mpeg")
+    except Exception:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=502, detail="tts unavailable")
+
 @app.post("/voice/token")
 def voice_token(body: TokenIn):
     from backend.voice_live import make_token

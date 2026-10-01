@@ -167,14 +167,39 @@ if (typeof speechSynthesis !== 'undefined') {
   pickVoice();
   speechSynthesis.onvoiceschanged = pickVoice;
 }
-function cleanSpeak(s) {
-  return (s || '').replace(/\[.*?page \d+\]/g, ' ').replace(/[•#*`_>|]/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 200);
+function cleanSpeak(s, n) {
+  return (s || '').replace(/\[.*?page \d+\]/g, ' ').replace(/[•#*`_>|]/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, n || 200);
 }
-function speakOut(s) {
+let currentAudio = null;
+function stopAudio() {
+  try { if (currentAudio) { currentAudio.pause(); currentAudio = null; } } catch (e) {}
+  try { speechSynthesis.cancel(); } catch (e) {}
+}
+async function speakOut(s) {
+  if (!soundOn) return;
+  stopAudio();
+  const text = cleanSpeak(s, 400);
+  if (!text) return;
+  try {
+    const r = await fetch('/voice/speak', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text})
+    });
+    if (!r.ok) throw new Error('tts ' + r.status);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => URL.revokeObjectURL(url);
+    currentAudio.play();
+  } catch (e) {
+    speakBrowser(s);
+  }
+}
+function speakBrowser(s) {
   try {
     if (!soundOn) return;
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(cleanSpeak(s));
+    const u = new SpeechSynthesisUtterance(cleanSpeak(s, 200));
     if (voiceEnIn) u.voice = voiceEnIn;
     u.rate = 0.95;
     speechSynthesis.speak(u);
@@ -189,14 +214,14 @@ function stopSound() {
 let soundOn = true;
 function toggleSound() {
   soundOn = !soundOn;
-  if (!soundOn) { try { speechSynthesis.cancel(); } catch (e) {} }
+  if (!soundOn) { stopAudio(); }
   document.getElementById('sndbtn').textContent = soundOn ? 'Sound: On' : 'Sound: Off';
 }
 function ask(q) {
   document.getElementById('q').value = q; send();
 }
 function mic() {
-  try { speechSynthesis.cancel(); } catch (e) {}
+  stopAudio();
   const R = window.webkitSpeechRecognition || window.SpeechRecognition;
   if (!R) { alert('Mic not supported here, please type.'); return; }
   const rec = new R(); rec.lang = 'en-IN';
