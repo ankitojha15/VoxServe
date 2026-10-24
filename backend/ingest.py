@@ -19,7 +19,7 @@ def pg_url(url=None):
 
 DB_URL = pg_url()
 
-EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "embed-english-light-v3.0")
 
 def load_with_pages(path):
     text = open(path).read()
