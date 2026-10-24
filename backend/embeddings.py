@@ -10,8 +10,8 @@ import os
 
 from langchain_core.embeddings import Embeddings
 
-PROVIDER = os.getenv("EMBED_PROVIDER", "cohere")
-MODEL = os.getenv("EMBED_MODEL", "embed-english-light-v3.0")
+PROVIDER = os.getenv("EMBED_PROVIDER", "local")
+MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
 
 class _CohereEmbeddings(Embeddings):
