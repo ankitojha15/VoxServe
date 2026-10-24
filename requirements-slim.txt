@@ -19,6 +19,6 @@ python-dotenv==1.0.1
 pypdf==4.3.1
 beautifulsoup4==4.12.3
 langfuse==4.15.6
-langchain-cohere==0.6.0
-cohere==7.2.0
+langchain-cohere
+cohere
 
