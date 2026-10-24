@@ -14,7 +14,7 @@ services:
           type: keyvalue
           name: voxserve-cache
           property: connectionString
-            - key: EMBED_PROVIDER
+      - key: EMBED_PROVIDER
         value: cohere
       - key: COHERE_API_KEY
         sync: false
