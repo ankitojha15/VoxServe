@@ -10,7 +10,7 @@ import os
 
 from langchain_core.embeddings import Embeddings
 
-PROVIDER = os.getenv("EMBED_PROVIDER", "local")
+PROVIDER = os.getenv("EMBED_PROVIDER", "cohere")
 MODEL = os.getenv("EMBED_MODEL", "embed-english-light-v3.0")
 
 
