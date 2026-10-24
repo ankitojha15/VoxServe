@@ -14,10 +14,16 @@ services:
           type: keyvalue
           name: voxserve-cache
           property: connectionString
+            - key: EMBED_PROVIDER
+        value: cohere
+      - key: COHERE_API_KEY
+        sync: false
+      - key: RERANK_PROVIDER
+        value: rrf
+      - key: EMBED_MODEL
+        value: embed-english-light-v3.0
       - key: MCP_API_KEY
         sync: false
-      - key: EMBED_MODEL
-        value: sentence-transformers/all-MiniLM-L6-v2
       - key: GROQ_API_KEY
         sync: false
       - key: LANGFUSE_PUBLIC_KEY
