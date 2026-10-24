@@ -20,15 +20,15 @@ jobs:
       DATABASE_URL: postgresql+psycopg://vox:vox123@localhost:5432/voxserve
       REDIS_URL: redis://localhost:6379
       MCP_API_KEY: vox-secret-123
-      EMBED_PROVIDER: cohere
-      EMBED_MODEL: embed-english-light-v3.0
+      EMBED_PROVIDER: local
+      EMBED_MODEL: BAAI/bge-small-en-v1.5
       RERANK_PROVIDER: rrf
-      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
+      - run: pip install sentence-transformers torch --index-url https://download.pytorch.org/whl/cpu
       - run: python -m backend.ingest
       - run: python -m backend.eval50
