@@ -20,7 +20,9 @@ jobs:
       DATABASE_URL: postgresql+psycopg://vox:vox123@localhost:5432/voxserve
       REDIS_URL: redis://localhost:6379
       MCP_API_KEY: vox-secret-123
-      EMBED_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      EMBED_PROVIDER: cohere
+      EMBED_MODEL: embed-english-light-v3.0
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
