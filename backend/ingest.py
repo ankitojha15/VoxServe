@@ -96,6 +96,8 @@ URLS = [
         # "https://example.com/shipping-help",
     ]
 if __name__ == "__main__":
+    import time as _time
+
     embeddings = get_embeddings()
     print(f"Embedding model: {EMBED_MODEL}")
 
@@ -110,6 +112,9 @@ if __name__ == "__main__":
     ticket_docs = load_tickets_with_pages()
 
     print(f"Policy chunks: {len(policy_docs)}, Ticket chunks: {len(ticket_docs)}")
+
+    BATCH_SIZE = 20
+    SLEEP_SECONDS = 12  # Cohere trial: 100 calls/minute
 
     for name, docs in [("vox_policy", policy_docs), ("vox_tickets", ticket_docs)]:
         store = PGVector(
@@ -129,5 +134,9 @@ if __name__ == "__main__":
             use_jsonb=True,
         )
         if docs:
-            store.add_documents(docs)
+            for i in range(0, len(docs), BATCH_SIZE):
+                batch = docs[i : i + BATCH_SIZE]
+                store.add_documents(batch)
+                print(f"  {name}: batch {i // BATCH_SIZE + 1} ({len(batch)} docs)")
+                _time.sleep(SLEEP_SECONDS)
     print("Ingest done: 2 collections")
