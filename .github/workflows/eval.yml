@@ -22,7 +22,7 @@ jobs:
       MCP_API_KEY: vox-secret-123
       EMBED_PROVIDER: cohere
       EMBED_MODEL: embed-english-light-v3.0
-
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
