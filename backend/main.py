@@ -120,12 +120,12 @@ def ingest_pdf(file: UploadFile = File(...)):
         path = f"data/raw/{file.filename}"
         with open(path, "wb") as f:
             f.write(file.file.read())
-        from backend.ingest import load_pdf_with_pages
+        from backend.ingest import load_pdf_with_pages, DB_URL
         from backend.embeddings import get_embeddings
         from langchain_postgres import PGVector
         docs = load_pdf_with_pages(path)
         emb = get_embeddings()
-        store = PGVector(embeddings=emb, collection_name="vox_policy", connection=os.getenv("DATABASE_URL", "postgresql+psycopg://vox:vox123@localhost:5434/voxserve"), use_jsonb=True)
+        store = PGVector(embeddings=emb, collection_name="vox_policy", connection=DB_URL, use_jsonb=True)
         if docs:
             store.add_documents(docs)
         from backend.retriever import clear_cache
