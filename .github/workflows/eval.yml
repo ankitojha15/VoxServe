@@ -20,7 +20,8 @@ jobs:
       DATABASE_URL: postgresql+psycopg://vox:vox123@localhost:5432/voxserve
       REDIS_URL: redis://localhost:6379
       MCP_API_KEY: vox-secret-123
-      EMBED_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      EMBED_PROVIDER: fastembed
+      EMBED_MODEL: BAAI/bge-small-en-v1.5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,5 +34,8 @@ jobs:
           restore-keys: |
             pip-${{ runner.os }}-
       - run: pip install -r requirements.txt
+      # Import smoke: same import chain the server boots with (catches dep drift early)
+      - run: python -c "import backend.main; print('import-ok')"
       - run: python -m backend.ingest
+      # Real gate: eval50 exits non-zero when tool or faith < 0.75
       - run: python -m backend.eval50

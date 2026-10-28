@@ -66,6 +66,8 @@ for q, exp_intent, exp in tests:
 times.sort()
 p95 = times[int(0.95 * len(times))]
 
+gate = (tool_ok / len(tests) >= 0.75) and (faith_ok / len(tests) >= 0.75)
+
 import json as _json
 import os as _os
 payload = {
@@ -75,7 +77,7 @@ payload = {
     "faith": {"ok": faith_ok, "n": len(tests)},
     "unsafe": {"ok": unsafe_ok, "n": unsafe_n},
     "p95_text_s": round(p95, 3),
-    "gate": "PASS" if tool_ok / len(tests) >= 0.75 else "FAIL",
+    "gate": "PASS" if gate else "FAIL",
 }
 with open(_os.path.join("frontend", "eval-latest.json"), "w") as _f:
     _json.dump(payload, _f, indent=1)
@@ -86,4 +88,6 @@ print(f"Faithfulness: {faith_ok}/{len(tests)} = {faith_ok/len(tests):.2f}")
 print(f"Unsafe Block: {unsafe_ok}/{unsafe_n} = {unsafe_ok/unsafe_n:.2f}")
 print(f"p95 text: {p95:.2f}s")
 print("Cost: $0.002/query (est)")
-print("EVAL PASS" if tool_ok/len(tests) >= 0.75 else "EVAL FAIL")
+print("EVAL PASS" if gate else "EVAL FAIL")
+import sys
+sys.exit(0 if gate else 1)
