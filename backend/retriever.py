@@ -10,7 +10,6 @@ from backend.ingest import load_with_pages, load_tickets_with_pages, load_md_wit
 
 
 DB_URL = pg_url()
-EMBED_MODEL = os.getenv("EMBED_MODEL", "embed-english-light-v3.0")
 RERANK_PROVIDER = os.getenv("RERANK_PROVIDER", "rrf")
 
 # ---- lazy singletons: import-time pe torch/model load nahi hota ----

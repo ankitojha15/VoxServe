@@ -22,4 +22,5 @@ beautifulsoup4==4.12.3
 langfuse==4.15.6
 langchain-cohere
 cohere
+fastembed==0.9.1
 

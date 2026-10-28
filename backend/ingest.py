@@ -1,7 +1,7 @@
 import os
 import re
 import glob
-from backend.embeddings import get_embeddings, MODEL as EMBED_MODEL
+from backend.embeddings import get_embeddings, PROVIDER, MODEL
 from langchain_postgres import PGVector
 from langchain_core.documents import Document
 from backend.chunk import splitter
@@ -18,8 +18,6 @@ def pg_url(url=None):
 
 
 DB_URL = pg_url()
-
-EMBED_MODEL = os.getenv("EMBED_MODEL", "embed-english-light-v3.0")
 
 def load_with_pages(path):
     text = open(path).read()
@@ -97,7 +95,7 @@ URLS = [
     ]
 if __name__ == "__main__":
     embeddings = get_embeddings()
-    print(f"Embedding model: {EMBED_MODEL}")
+    print(f"Embedding provider: {PROVIDER} · model: {MODEL}")
 
     policy_docs = []
     for fpath in sorted(glob.glob("data/raw/*.md")):

@@ -99,7 +99,7 @@ Open `http://localhost:8000/demo` — chat, streaming, mic, room join, and `(cac
 Docker Blueprint via `render.yaml` (web + Postgres + Redis). Required env vars on the dashboard — secrets stay out of the repo (`.env.example` is the template):
 
 - `DATABASE_URL`, `REDIS_URL` (wired from Render services)
-- `EMBED_PROVIDER=api`, `EMBED_MODEL`, `HF_TOKEN` (torch-free embeddings)
+- `EMBED_PROVIDER` (`fastembed`, default), `EMBED_MODEL` (`BAAI/bge-small-en-v1.5`) — local ONNX embeddings, no key, no torch
 - `RERANK_PROVIDER` (`rrf` on small instances), `GROQ_API_KEY`
 - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` (voice room)
 - `MCP_API_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`
