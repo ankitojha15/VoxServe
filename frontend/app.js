@@ -1,10 +1,13 @@
 function tab(n) {
   for (const t of ['chat', 'docs', 'voice', 'ops']) {
     document.getElementById('c-' + t).className = 'tab' + (t === n ? ' on' : '');
-    document.getElementById('t-' + t).className = (t === n ? 'on' : '');
+    document.getElementById('t-' + t).className = 'nav-btn' + (t === n ? ' on' : '');
   }
   if (n === 'docs') loadSources();
   if (n === 'ops') loadHealth();
+}
+for (const b of document.querySelectorAll('.nav-btn')) {
+  b.addEventListener('click', () => tab(b.dataset.tab));
 }
 async function send() {
   const btn = document.getElementById('sendbtn');

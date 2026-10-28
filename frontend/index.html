@@ -9,72 +9,99 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<header>
-  <h1>VoxServe &mdash; Support Console</h1>
-  <p>Voice + text support over orders, tickets and policies.</p>
-  <p id="statusline" style="margin:6px auto 0; font-size:12px; color:#666; max-width:640px;">Checking server…</p>
-</header>
-<nav>
-  <button id="t-chat" class="on" onclick="tab('chat')">Chat</button>
-  <button id="t-docs" onclick="tab('docs')">Docs</button>
-  <button id="t-voice" onclick="tab('voice')">Voice</button>
-  <button id="t-ops" onclick="tab('ops')">Ops</button>
-</nav>
-<main>
-  <div id="c-chat" class="tab on">
-    <div class="card">
-      <input type="text" id="q" placeholder="Ask: Where is my order 1001?" onkeydown="if (event.key === 'Enter') send()">
-      <button class="act" id="sendbtn" onclick="send()">Send</button>
-      <button class="ghost" onclick="mic()">Mic</button>
-      <button class="ghost" id="sndbtn" onclick="toggleSound()">Sound: On</button>
-      <div style="margin-top:8px; font-size:13px; color:#555;">Demo IDs: 1001 shipped · 1002 delivered · 1003 stuck · 9999 not found<br>Try:
-        <button class="ghost" onclick="ask('Where is my order 1001?')">order status</button>
-        <button class="ghost" onclick="ask('How many days for COD refund?')">COD refund</button>
-        <button class="ghost" onclick="ask('Can I cancel after dispatch?')">cancel rule</button>
-        <button class="ghost" onclick="ask('Show my past tickets')">past tickets</button>
-        <button class="ghost" onclick="ask('Cancel my order 1002')">cancel order</button>
-        <button class="ghost" onclick="ask('Track order 9999')">unknown id</button>
-        <button class="ghost" onclick="ask('No of leave day at acme')">acme leaves</button>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="#1663d6"/>
+        <path d="M7 16h3l2-6 3 12 3-9 2 3h5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div><b>VoxServe</b><small>support console</small></div>
+    </div>
+    <button class="nav-btn on" id="t-chat" data-tab="chat">Chat</button>
+    <button class="nav-btn" id="t-docs" data-tab="docs">Docs</button>
+    <button class="nav-btn" id="t-voice" data-tab="voice">Voice</button>
+    <button class="nav-btn" id="t-ops" data-tab="ops">Ops</button>
+    <div class="spacer"></div>
+    <div class="status-block">
+      <span class="dot" id="dot"></span><span id="statusline">checking…</span>
+      <div class="mono ver" style="margin-top:6px;">v1.0 · demo</div>
+    </div>
+  </aside>
+
+  <main>
+    <section id="c-chat" class="tab on">
+      <h2 class="tab-title">Chat</h2>
+      <p class="tab-sub">Orders, tickets, and policy answers with citations.</p>
+      <div class="card">
+        <input type="text" id="q" placeholder="Ask: Where is my order 1001?" onkeydown="if (event.key === 'Enter') send()">
+        <button class="act" id="sendbtn" onclick="send()" style="margin-left:8px;">Send</button>
+        <button class="ghost" onclick="mic()">Mic</button>
+        <button class="ghost" id="sndbtn" onclick="toggleSound()">Sound: On</button>
+        <div style="margin-top:10px; font-size:13px; color:var(--muted);">Demo IDs: <span class="mono">1001</span> shipped · <span class="mono">1002</span> delivered · <span class="mono">1003</span> stuck · <span class="mono">9999</span> not found</div>
+        <div style="margin-top:8px;">
+          <button class="ghost" onclick="ask('Where is my order 1001?')">order status</button>
+          <button class="ghost" onclick="ask('How many days for COD refund?')">COD refund</button>
+          <button class="ghost" onclick="ask('Can I cancel after dispatch?')">cancel rule</button>
+          <button class="ghost" onclick="ask('Show my past tickets')">past tickets</button>
+          <button class="ghost" onclick="ask('Cancel my order 1002')">cancel order</button>
+          <button class="ghost" onclick="ask('Track order 9999')">unknown id</button>
+          <button class="ghost" onclick="ask('No of leave day at acme')">acme leaves</button>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <b>Conversation</b> <button class="ghost" onclick="clearChat()">Clear</button>
-      <div id="out" style="margin-top:8px;"><span class="skel">Answers appear here with citations.</span></div>
-    </div>
-  </div>
-  <div id="c-docs" class="tab">
-    <div class="card">
-      <b>Upload policy PDF</b><br><br>
-      <input type="file" id="pdf" accept=".pdf" onchange="document.getElementById('upbtn').disabled = false">
-      <button class="act" id="upbtn" onclick="uploadPdf()" disabled>Upload + Ingest</button>
-      <span id="upmsg" class="skel"></span>
-    </div>
-    <div class="card">
-      <b>Sources</b> <button class="ghost" onclick="loadSources()">Refresh</button>
-      <div id="sources"><span class="skel">Loading…</span></div>
-    </div>
-  </div>
-  <div id="c-voice" class="tab">
-    <div class="card">
-      <button class="act" id="joinbtn" onclick="joinRoom()">Join Room</button>
-      <button class="ghost" id="speakbtn" onclick="mic()" disabled>Speak</button>
-      <div id="vout" style="margin-top:8px;"><span class="skel">Join the room first, then speak.</span></div>
-    </div>
-  </div>
-  <div id="c-ops" class="tab">
-    <div class="card">
-      <b>Evals</b>
-      <div id="evals"><span class="skel">Loading…</span></div>
-    </div>
-    <div class="card" id="health-card">
-      <b>Health</b>
-      <div id="health"><span class="skel">Checking…</span></div>
-    </div>
-  </div>
-</main>
-<footer>
-  <a href="https://github.com/ankitojha15/VoxServe" target="_blank" rel="noopener">GitHub</a>
-  <a href="https://github.com/ankitojha15/VoxServe/tree/main/data/raw" target="_blank" rel="noopener">Policy docs</a>
+      <div class="card">
+        <b>Conversation</b> <button class="ghost" onclick="clearChat()" style="margin-left:6px;">Clear</button>
+        <div id="out" style="margin-top:8px;"><span class="skel">Answers appear here with citations.</span></div>
+      </div>
+    </section>
+
+    <section id="c-docs" class="tab">
+      <h2 class="tab-title">Docs</h2>
+      <p class="tab-sub">Policy sources feeding retrieval. Upload adds a file to the index.</p>
+      <div class="card">
+        <b>Upload policy PDF</b><br><br>
+        <input type="file" id="pdf" accept=".pdf" onchange="document.getElementById('upbtn').disabled = false">
+        <button class="act" id="upbtn" onclick="uploadPdf()" disabled style="margin-left:8px;">Upload + Ingest</button>
+        <span id="upmsg" class="skel"></span>
+      </div>
+      <div class="card">
+        <b>Sources</b> <button class="ghost" onclick="loadSources()" style="margin-left:6px;">Refresh</button>
+        <div id="sources" style="margin-top:8px;"><span class="skel">Loading…</span></div>
+      </div>
+    </section>
+
+    <section id="c-voice" class="tab">
+      <h2 class="tab-title">Voice</h2>
+      <p class="tab-sub">Browser speech recognition + neural TTS answers.</p>
+      <div class="card">
+        <button class="act" id="joinbtn" onclick="joinRoom()">Join Room</button>
+        <button class="ghost" id="speakbtn" onclick="mic()" disabled style="margin-left:8px;">Speak</button>
+        <div id="vout" style="margin-top:8px;"><span class="skel">Join the room first, then speak.</span></div>
+      </div>
+    </section>
+
+    <section id="c-ops" class="tab">
+      <h2 class="tab-title">Ops</h2>
+      <p class="tab-sub">Health, latency, and eval status.</p>
+      <div class="card">
+        <b>Evals</b>
+        <div id="evals" style="margin-top:8px;"><span class="skel">Loading…</span></div>
+      </div>
+      <div class="card">
+        <b>Health</b>
+        <div id="health" style="margin-top:8px;"><span class="skel">Checking…</span></div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="panel" id="panel">
+    <h3>Context</h3>
+    <div class="empty">Order details and citation sources appear here.</div>
+  </aside>
+</div>
+<footer style="border-top:1px solid var(--border); padding:10px 20px; font-size:12px; color:var(--muted); text-align:center;">
+  <a href="https://github.com/ankitojha15/VoxServe" target="_blank" rel="noopener" style="color:inherit; margin-right:12px;">GitHub</a>
+  <a href="https://github.com/ankitojha15/VoxServe/tree/main/data/raw" target="_blank" rel="noopener" style="color:inherit; margin-right:12px;">Policy docs</a>
   <span>Demo build · sample data: sample policies + synthetic tickets</span>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
