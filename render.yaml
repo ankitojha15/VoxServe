@@ -32,13 +32,11 @@ services:
         sync: false
       - key: LANGFUSE_HOST
         value: https://us.cloud.langfuse.com
+  - type: keyvalue
+    name: voxserve-cache
+    plan: free
 
 databases:
   - name: voxserve-db
     plan: free
     postgresMajorVersion: 16
-
-services2:
-  - type: keyvalue
-    name: voxserve-cache
-    plan: free
