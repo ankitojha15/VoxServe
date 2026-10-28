@@ -10,7 +10,7 @@ VoxServe is a **voice + text AI support copilot** for e-commerce. It checks live
 
 ## Try it live
 
-Open https://voxserve.onrender.com/ — no login needed. Four tabs: **Chat · Docs · Voice · Ops**.
+Open https://voxserve.onrender.com/ — no login needed. Support console UI (sidebar + context panel, dark mode aware). Tabs: **Chat · Docs · Voice · Ops**.
 
 Try these:
 

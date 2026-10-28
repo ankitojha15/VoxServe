@@ -41,6 +41,8 @@ async function healthLoop() {
 
 /* ---------- tabs ---------- */
 function tab(n) {
+  const titles = {chat: "Chat", docs: "Docs", voice: "Voice", ops: "Ops"};
+  document.title = "VoxServe — " + titles[n];
   for (const t of ["chat", "docs", "voice", "ops"]) {
     $("c-" + t).className = "tab" + (t === n ? " on" : "");
     $("t-" + t).className = "nav-btn" + (t === n ? " on" : "");
