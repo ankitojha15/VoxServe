@@ -341,10 +341,70 @@ async function joinRoom() {
 }
 
 /* ---------- ops ---------- */
-async function loadEvals() { /* step 4 */ }
-async function loadAudit() { /* step 4 */ }
-function drawSpark() { /* step 4 */ }
-function pushLatency(ms) { /* step 4 */ }
+async function loadEvals() {
+  const box = $("evals");
+  try {
+    const e = await (await fetch("/static/eval-latest.json", {cache: "no-store"})).json();
+    const pc = o => (o.n ? (o.ok / o.n).toFixed(2) : "-");
+    box.innerHTML =
+      '<div class="kv"><b>Run</b><span>' + esc(e.run) + '</span></div>'
+      + '<div class="kv"><b>Tool acc</b><span class="mono">' + e.tool.ok + '/' + e.tool.n + ' = ' + pc(e.tool) + '</span></div>'
+      + '<div class="kv"><b>Faithfulness</b><span class="mono">' + e.faith.ok + '/' + e.faith.n + ' = ' + pc(e.faith) + '</span></div>'
+      + '<div class="kv"><b>Unsafe block</b><span class="mono">' + e.unsafe.ok + '/' + e.unsafe.n + '</span></div>'
+      + '<div class="kv"><b>p95 text</b><span class="mono">' + e.p95_text_s + 's</span></div>'
+      + '<div style="margin-top:8px;"><span class="badge ' + (e.gate === "PASS" ? "ok" : "err") + '">gate ' + esc(e.gate) + '</span></div>';
+  } catch (e2) {
+    box.innerHTML = '<span class="empty">No eval file yet. Run: python -m backend.eval50</span>';
+  }
+}
+async function loadAudit() {
+  const box = $("audit");
+  try {
+    const d = await (await fetch("/audit/tail", {cache: "no-store"})).json();
+    if (!d.entries.length) { box.innerHTML = '<span class="empty">No audit entries yet. Use the chat, then refresh.</span>'; return; }
+    box.innerHTML = '<table><tr><th>Time</th><th>Tool</th><th>Args</th><th>Status</th></tr>'
+      + d.entries.map(a =>
+        '<tr><td class="mono">' + esc(String(a.ts).slice(0, 19)) + '</td>'
+        + '<td class="mono">' + esc(a.tool) + '</td>'
+        + '<td class="mono">' + esc(a.args) + '</td>'
+        + '<td class="mono">' + esc(a.status) + '</td></tr>').join("")
+      + '</table>';
+  } catch (e) {
+    box.innerHTML = '<span class="empty">Audit not available.</span>';
+  }
+}
+const LAT_KEY = "vox_lat";
+function pushLatency(ms) {
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(LAT_KEY) || "[]"); } catch (e) {}
+  arr.push(ms);
+  if (arr.length > 50) arr = arr.slice(-50);
+  try { localStorage.setItem(LAT_KEY, JSON.stringify(arr)); } catch (e) {}
+  if ($("c-ops").classList.contains("on")) drawSpark();
+}
+function drawSpark() {
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(LAT_KEY) || "[]"); } catch (e) {}
+  const stats = $("latstats");
+  if (!arr.length) { stats.textContent = "no data yet — send a chat first"; return; }
+  const s = [...arr].sort((a, b) => a - b);
+  const p95 = s[Math.floor(0.95 * (s.length - 1))];
+  const avg = Math.round(s.reduce((x, y) => x + y, 0) / s.length);
+  stats.textContent = "n=" + arr.length + " · avg " + avg + "ms · p95 " + p95 + "ms (client-measured)";
+  const cv = $("spark");
+  const c = cv.getContext("2d");
+  c.clearRect(0, 0, cv.width, cv.height);
+  const max = Math.max(...arr, 100), W = cv.width, H = cv.height, pad = 4;
+  c.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#1663d6";
+  c.lineWidth = 1.5;
+  c.beginPath();
+  arr.forEach((ms2, i) => {
+    const x = pad + (i / Math.max(arr.length - 1, 1)) * (W - 2 * pad);
+    const y = H - pad - (ms2 / max) * (H - 2 * pad);
+    i ? c.lineTo(x, y) : c.moveTo(x, y);
+  });
+  c.stroke();
+}
 
 /* ---------- wire up ---------- */
 $("sendbtn").onclick = send;

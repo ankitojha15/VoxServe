@@ -64,6 +64,21 @@ def health():
         redis_status = "down"
     return {"status": "ok", "redis": redis_status}
 
+@app.get("/audit/tail")
+def audit_tail():
+    path = os.path.join("mcp_hub", "audit.log")
+    try:
+        with open(path) as f:
+            lines = f.readlines()[-20:]
+    except FileNotFoundError:
+        return {"entries": []}
+    entries = []
+    for ln in lines:
+        parts = [p.strip() for p in ln.split("|", 3)]
+        if len(parts) == 4:
+            entries.append({"ts": parts[0], "tool": parts[1], "args": parts[2], "status": parts[3]})
+    return {"entries": entries}
+
 @app.get("/demo")
 def demo():
     return FileResponse("frontend/index.html")

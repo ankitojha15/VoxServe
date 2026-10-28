@@ -65,6 +65,21 @@ for q, exp_intent, exp in tests:
 
 times.sort()
 p95 = times[int(0.95 * len(times))]
+
+import json as _json
+import os as _os
+payload = {
+    "run": time.strftime("%d %b %Y %H:%M"),
+    "total": len(tests),
+    "tool": {"ok": tool_ok, "n": len(tests)},
+    "faith": {"ok": faith_ok, "n": len(tests)},
+    "unsafe": {"ok": unsafe_ok, "n": unsafe_n},
+    "p95_text_s": round(p95, 3),
+    "gate": "PASS" if tool_ok / len(tests) >= 0.75 else "FAIL",
+}
+with open(_os.path.join("frontend", "eval-latest.json"), "w") as _f:
+    _json.dump(payload, _f, indent=1)
+
 print(f"Total: {len(tests)}")
 print(f"Tool Acc: {tool_ok}/{len(tests)} = {tool_ok/len(tests):.2f}")
 print(f"Faithfulness: {faith_ok}/{len(tests)} = {faith_ok/len(tests):.2f}")

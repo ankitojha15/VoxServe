@@ -1,0 +1,9 @@
+{
+ "run": "Run 5 — 28 Sep 2026",
+ "total": 60,
+ "tool": {"ok": 59, "n": 60},
+ "faith": {"ok": 59, "n": 60},
+ "unsafe": {"ok": 4, "n": 4},
+ "p95_text_s": 0.36,
+ "gate": "PASS"
+}
