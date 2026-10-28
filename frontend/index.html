@@ -33,25 +33,30 @@
     <section id="c-chat" class="tab on">
       <h2 class="tab-title">Chat</h2>
       <p class="tab-sub">Orders, tickets, and policy answers with citations.</p>
-      <div class="card">
-        <input type="text" id="q" placeholder="Ask: Where is my order 1001?" onkeydown="if (event.key === 'Enter') send()">
-        <button class="act" id="sendbtn" onclick="send()" style="margin-left:8px;">Send</button>
-        <button class="ghost" onclick="mic()">Mic</button>
-        <button class="ghost" id="sndbtn" onclick="toggleSound()">Sound: On</button>
+      <div class="card composer-card">
+        <textarea id="q" rows="2" placeholder="Ask: Where is my order 1001?" aria-label="Your question"></textarea>
+        <div class="composer-row">
+          <button class="act" id="sendbtn">Send</button>
+          <button class="ghost" id="micbtn">Mic</button>
+          <button class="ghost" id="sndbtn">Sound: On</button>
+          <span class="cite" style="margin-left:auto;">Enter to send · Shift+Enter new line</span>
+        </div>
         <div style="margin-top:10px; font-size:13px; color:var(--muted);">Demo IDs: <span class="mono">1001</span> shipped · <span class="mono">1002</span> delivered · <span class="mono">1003</span> stuck · <span class="mono">9999</span> not found</div>
-        <div style="margin-top:8px;">
-          <button class="ghost" onclick="ask('Where is my order 1001?')">order status</button>
-          <button class="ghost" onclick="ask('How many days for COD refund?')">COD refund</button>
-          <button class="ghost" onclick="ask('Can I cancel after dispatch?')">cancel rule</button>
-          <button class="ghost" onclick="ask('Show my past tickets')">past tickets</button>
-          <button class="ghost" onclick="ask('Cancel my order 1002')">cancel order</button>
-          <button class="ghost" onclick="ask('Track order 9999')">unknown id</button>
-          <button class="ghost" onclick="ask('No of leave day at acme')">acme leaves</button>
+        <div style="margin-top:8px;" id="prompts">
+          <button class="ghost" data-q="Where is my order 1001?">order status</button>
+          <button class="ghost" data-q="How many days for COD refund?">COD refund</button>
+          <button class="ghost" data-q="Can I cancel after dispatch?">cancel rule</button>
+          <button class="ghost" data-q="Show my past tickets">past tickets</button>
+          <button class="ghost" data-q="Cancel my order 1002">cancel order</button>
+          <button class="ghost" data-q="Track order 9999">unknown id</button>
+          <button class="ghost" data-q="No of leave day at acme">acme leaves</button>
         </div>
       </div>
       <div class="card">
-        <b>Conversation</b> <button class="ghost" onclick="clearChat()" style="margin-left:6px;">Clear</button>
-        <div id="out" style="margin-top:8px;"><span class="skel">Answers appear here with citations.</span></div>
+        <b>Conversation</b> <button class="ghost" id="clearbtn" style="margin-left:6px;">Clear</button>
+        <div id="out" role="log" aria-live="polite" style="margin-top:8px;">
+          <div class="empty">Answers appear here with citations.</div>
+        </div>
       </div>
     </section>
 
@@ -60,12 +65,12 @@
       <p class="tab-sub">Policy sources feeding retrieval. Upload adds a file to the index.</p>
       <div class="card">
         <b>Upload policy PDF</b><br><br>
-        <input type="file" id="pdf" accept=".pdf" onchange="document.getElementById('upbtn').disabled = false">
-        <button class="act" id="upbtn" onclick="uploadPdf()" disabled style="margin-left:8px;">Upload + Ingest</button>
+        <input type="file" id="pdf" accept=".pdf">
+        <button class="act" id="upbtn" disabled style="margin-left:8px;">Upload + Ingest</button>
         <span id="upmsg" class="skel"></span>
       </div>
       <div class="card">
-        <b>Sources</b> <button class="ghost" onclick="loadSources()" style="margin-left:6px;">Refresh</button>
+        <b>Sources</b> <button class="ghost" id="srcbtn" style="margin-left:6px;">Refresh</button>
         <div id="sources" style="margin-top:8px;"><span class="skel">Loading…</span></div>
       </div>
     </section>
@@ -74,9 +79,16 @@
       <h2 class="tab-title">Voice</h2>
       <p class="tab-sub">Browser speech recognition + neural TTS answers.</p>
       <div class="card">
-        <button class="act" id="joinbtn" onclick="joinRoom()">Join Room</button>
-        <button class="ghost" id="speakbtn" onclick="mic()" disabled style="margin-left:8px;">Speak</button>
-        <div id="vout" style="margin-top:8px;"><span class="skel">Join the room first, then speak.</span></div>
+        <div class="vstate-row">
+          <span class="dot" id="vdot"></span><span id="vstate">idle</span>
+        </div>
+        <button class="act" id="micbtn2" style="margin-top:10px;">Speak</button>
+      </div>
+      <div class="card">
+        <b>Advanced — LiveKit room</b>
+        <div class="cite" style="margin-top:4px;">Room scaffold. Agent audio wiring is not live yet.</div>
+        <button class="ghost" id="joinbtn" style="margin-top:8px;">Join Room</button>
+        <div id="vout" style="margin-top:8px;"></div>
       </div>
     </section>
 
@@ -88,15 +100,26 @@
         <div id="evals" style="margin-top:8px;"><span class="skel">Loading…</span></div>
       </div>
       <div class="card">
+        <b>Latency</b>
+        <div style="margin-top:8px;"><canvas id="spark" width="260" height="48" aria-label="Latency of recent chats"></canvas></div>
+        <div class="mono" id="latstats" style="margin-top:4px;">no data yet</div>
+      </div>
+      <div class="card">
         <b>Health</b>
         <div id="health" style="margin-top:8px;"><span class="skel">Checking…</span></div>
+      </div>
+      <div class="card">
+        <b>MCP audit (last 20)</b>
+        <div id="audit" style="margin-top:8px;"><span class="skel">Loading…</span></div>
       </div>
     </section>
   </main>
 
   <aside class="panel" id="panel">
     <h3>Context</h3>
-    <div class="empty">Order details and citation sources appear here.</div>
+    <div id="ctx"><div class="empty">Order details and citation sources appear here.</div></div>
+    <h3 style="margin-top:18px;">Sources</h3>
+    <div id="psources"><div class="empty">Open the Docs tab to manage.</div></div>
   </aside>
 </div>
 <footer style="border-top:1px solid var(--border); padding:10px 20px; font-size:12px; color:var(--muted); text-align:center;">

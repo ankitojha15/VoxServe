@@ -159,3 +159,49 @@ th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
 th { background: var(--surface-2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); }
 
 .skel { color: var(--muted); font-size: 13px; }
+.empty { color: var(--muted); font-size: 13px; }
+
+/* ---- composer ---- */
+textarea {
+  font: inherit; font-size: 14px; color: var(--text);
+  padding: 8px 10px; width: 100%;
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); resize: none;
+  min-height: 44px; max-height: 140px; line-height: 1.45;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.composer-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+
+/* ---- conversation ---- */
+.msg { padding: 10px 0; border-top: 1px solid var(--border); }
+.msg:first-child { border-top: none; }
+.who {
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-right: 8px;
+}
+.msg-body { white-space: pre-wrap; line-height: 1.55; margin-top: 3px; }
+.msg.escalated .msg-body { color: var(--err); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; align-items: center; }
+.cites { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+.cite-chip {
+  font-family: var(--mono); font-size: 11px; padding: 3px 8px;
+  border: 1px solid var(--accent); color: var(--accent);
+  border-radius: 4px; background: var(--accent-soft); cursor: pointer;
+}
+.link-btn {
+  font: inherit; font-size: 11px; background: none; border: 0;
+  color: var(--muted); cursor: pointer; text-decoration: underline;
+  padding: 0;
+}
+.link-btn:hover { color: var(--accent); }
+
+/* ---- context panel cards ---- */
+.kv { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-top: 1px solid var(--border); font-size: 13px; }
+.kv:first-child { border-top: none; }
+.kv b { font-weight: 600; color: var(--muted); font-size: 12px; }
+
+/* ---- voice state ---- */
+.vstate-row { display: flex; align-items: center; font-size: 13px; color: var(--muted); }
+.dot.pulse { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
