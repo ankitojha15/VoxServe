@@ -1,7 +1,6 @@
 import os
 import asyncio
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
 from gtts import gTTS
 from livekit.api import AccessToken, VideoGrants
 import time
@@ -9,10 +8,19 @@ import time
 
 load_dotenv()
 
-llm = ChatGroq(
-    model="openai/gpt-oss-20b",
-    groq_api_key=os.getenv("GROQ_API_KEY"),
-)
+_LLM = None
+
+def _get_llm():
+    """Lazy LLM client. Import stays key-free so /voice/speak works without Groq."""
+    global _LLM
+    if _LLM is None:
+        from langchain_groq import ChatGroq
+        _LLM = ChatGroq(
+            model=os.getenv("LLM_MODEL", "openai/gpt-oss-20b"),
+            groq_api_key=os.getenv("GROQ_API_KEY"),
+            temperature=0,
+        )
+    return _LLM
 
 def make_token(room: str = "voice-room-1", name: str = "user1"):
     token = AccessToken(
@@ -52,12 +60,12 @@ async def room_test():
     print("ROOM LEFT")
 
 if __name__ == "__main__":
-    print("LLM test:", llm.invoke("Say ok in 3 words").content[:100])
+    print("LLM test:", _get_llm().invoke("Say ok in 3 words").content[:100])
     print(speak("Voice line working"))
     print("TTS done: out.mp3")
     print("TOKEN len:", len(make_token()))
     t0 = time.time()
-    llm.invoke("Say hi")
+    _get_llm().invoke("Say hi")
     t_llm = time.time() - t0
     t0 = time.time()
     speak("Hi there")
