@@ -9,6 +9,7 @@ from backend.observe import get_trace_client, trace_chat
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi import UploadFile, File
 try:
     from langfuse import get_client  # noqa: F401 (v4 entrypoint lives in observe.py)
@@ -19,6 +20,9 @@ except Exception:
 load_dotenv(override=True)
 
 app = FastAPI(title="VoxServe")
+
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
 
 app.add_middleware(
     CORSMiddleware,
