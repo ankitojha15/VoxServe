@@ -83,6 +83,26 @@ def debug_db(key: str = ""):
     except Exception:
         return {"db": "fail", "stage": "connect", "db_host": host, "trace": traceback.format_exc()[-2500:]}
 
+@app.get("/debug/model")
+def debug_model(key: str = ""):
+    if key != os.getenv("MCP_API_KEY", "vox-secret-123"):
+        return {"error": "unauthorized"}
+    import time, traceback
+    t0 = time.time()
+    try:
+        from backend.embeddings import get_embeddings, MODEL
+        emb = get_embeddings()
+        t1 = time.time()
+        vec = emb.embed_query("hello")
+        rss_mb = round(__import__("resource").getrusage(__import__("resource").RUSAGE_SELF).ru_maxrss / 1024, 1)
+        return {
+            "model": "ok", "model_name": MODEL, "dim": len(vec),
+            "load_s": round(t1 - t0, 2), "total_s": round(time.time() - t0, 2),
+            "max_ram_mb": rss_mb,
+        }
+    except Exception:
+        return {"model": "fail", "elapsed_s": round(time.time() - t0, 2), "trace": traceback.format_exc()[-2500:]}
+
 @app.get("/audit/tail")
 def audit_tail():
     path = os.path.join("mcp_hub", "audit.log")
