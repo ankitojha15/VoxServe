@@ -64,6 +64,25 @@ def health():
         redis_status = "down"
     return {"status": "ok", "redis": redis_status}
 
+@app.get("/debug/db")
+def debug_db(key: str = ""):
+    if key != os.getenv("MCP_API_KEY", "vox-secret-123"):
+        return {"error": "unauthorized"}
+    import traceback
+    try:
+        from backend.ingest import DB_URL
+    except Exception:
+        return {"db": "fail", "stage": "import backend.ingest", "trace": traceback.format_exc()[-2500:]}
+    host = DB_URL.split("@")[-1].split("/")[0]  # host only, no password
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(DB_URL)
+        with engine.connect() as conn:
+            one = conn.execute(text("select 1")).scalar()
+        return {"db": "ok", "select_1": one, "db_host": host}
+    except Exception:
+        return {"db": "fail", "stage": "connect", "db_host": host, "trace": traceback.format_exc()[-2500:]}
+
 @app.get("/audit/tail")
 def audit_tail():
     path = os.path.join("mcp_hub", "audit.log")
