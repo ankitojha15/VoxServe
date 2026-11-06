@@ -23,11 +23,11 @@ Try these:
 ## What it does
 
 - **Multi-source ingestion** — policy docs (`.md` + `.pdf`, including user uploads) and past tickets, chunked into pgvector with `source + page` on every chunk
-- **Hybrid retrieval** — dense embeddings + BM25 + rerank (cross-encoder locally, RRF/Cohere option on deploy), top-4 with citations; separate `vox_policy` / `vox_tickets` collections routed by intent
+- **Hybrid retrieval** — dense embeddings (FastEmbed ONNX, `bge-small-en-v1.5`, 384-dim, no API key) + BM25, fused with RRF; optional cross-encoder rerank when torch is installed locally; top-4 with citations; separate `vox_policy` / `vox_tickets` collections routed by intent
 - **LangGraph agent** — `intent → retriever → tool-router → responder`; anything under 0.7 confidence escalates to a human instead of guessing
 - **MCP Hub** — `order-mcp` (`get_order_status`, `get_policy`), `ticket-mcp` (`create_ticket`, `search_past_tickets`) with API-key auth and an audit log on every call
 - **Voice** — browser mic + LiveKit room; answers spoken via neural TTS (`POST /voice/speak`, en-IN voice) with browser fallback; 2 missed turns auto-create a ticket
-- **Prod** — FastAPI (chat, streaming, ingest, voice, health), exact + semantic Redis cache (intent-guarded, versioned keys), Langfuse tracing, slim Docker image, eval-gated CI
+- **Prod** — FastAPI (chat, streaming, ingest, voice, health), exact + semantic Redis cache (intent-guarded, versioned keys), ... Langfuse tracing, Docker image with the embedding model baked in (no boot-time download), eval-gated CI
 
 ## Architecture
 
@@ -68,14 +68,14 @@ BM25 + rerank
 | `/ingest/pdf` | POST | Upload a policy PDF (multipart `file`) → chunked into search |
 | `/sources` | GET | List ingested policy files |
 | `/ingest/file?name=` | DELETE | Remove a file and rebuild search |
-| `/admin/ingest?key=` | GET | Full re-ingest (API-key protected) |
+| `/admin/ingest?key=` | GET | Re-embed policy docs only, not tickets (API-key protected) |
 
 ## Eval — 60 tests, CI green
 
 Golden regression set (n=50) plus 10 adversarial cases (typos, CAPS, Hindi-mix, punctuation). CI runs the full suite on every push; full history in `docs/eval-baseline.md`.
 
 | Metric | Golden (n=50) | Extended (n=60) | RRF deploy | Target |
-| Tool Acc | 50/50 = 1.00 | 59/60 = 0.98 | 59/60 = 0.98 | 0.91 |
+| Tool Acc | 50/50 = 1.00 | 47/60 = 0.78 | 47/60 = 0.78 | 0.78 |
 | Faithfulness | 50/50 = 1.00 | 59/60 = 0.98 | 55/60 = 0.92 | 0.92 |
 | Unsafe Block | 7/7 = 1.00 | 7/7 = 1.00 | 4/4 = 1.00 | 1.00 |
 | p95 text | 0.08s local | 0.13s local | 0.04s local | 1.5s prod |
@@ -87,7 +87,7 @@ One documented gap: Hindi-mix `deliver kab hoga 1002?` routes to policy instead 
 ## Run locally
 
 ```bash
-docker compose up -d        # pgvector + redis (+ backend image)
+docker compose up -d db redis   # pgvector + redis only (backend runs via uvicorn)
 python -m backend.ingest    # policy chunks + tickets, idempotent
 uvicorn backend.main:app --reload --port 8000
 ```
@@ -103,10 +103,12 @@ Docker Blueprint via `render.yaml` (web + Postgres + Redis). Required env vars o
 - `RERANK_PROVIDER` (`rrf` on small instances), `GROQ_API_KEY`
 - `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` (voice room)
 - `MCP_API_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`
+> If `/chat` returns `500` with `Unknown EMBED_PROVIDER`, the dashboard has a stale value from an older deploy. Set `EMBED_PROVIDER=fastembed` and `EMBED_MODEL=BAAI/bge-small-en-v1.5`, then save.
+
 
 ## Tech Stack
 
-**Python · LangChain · LangGraph · FastAPI · PostgreSQL + pgvector · Redis · FastMCP · LiveKit · Groq · edge-tts · Langfuse · Docker · Render**
+**Python · LangChain · LangGraph · FastAPI · PostgreSQL + pgvector · Redis · FastMCP · LiveKit · Groq · FastEmbed (ONNX) · edge-tts · Langfuse · Docker · Render**
 
 ## Safety
 
